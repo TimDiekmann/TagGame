@@ -1,0 +1,10 @@
+[package]
+name = "tag_game"
+version = "0.1.0"
+edition = "2018"
+description = "Agent-Based implementation for the game \"Tag\""
+repository = "https://github.com/TimDiekmann/TagGame"
+license = "MIT"
+keywords = ["agent", "agent-based", "game", "tag"]
+categories = ["games"]
+publish = false
