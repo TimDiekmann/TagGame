@@ -1,9 +1,11 @@
-use crate::{Agent, Behavior, State};
+use crate::{Agent, Behavior};
 
+/// Adds and removes [`Agent`]s, and updates the them
+/// based on their defined behavior.
+///
+/// Please see the [crate documentation][crate] for examples.
 pub struct Simulation<W, S, B>
 where
-    W: State,
-    S: State,
     B: Behavior<State = S, World = W>,
 {
     world: W,
@@ -13,11 +15,11 @@ where
 
 impl<W, S, B> Simulation<W, S, B>
 where
-    W: State,
-    S: State,
     B: Behavior<State = S, World = W>,
 {
     /// Creates a simulation, where different agents can be created.
+    ///
+    /// Please see the [crate documentation][crate] for examples.
     pub fn new(world: W) -> Self {
         Self {
             world,
@@ -26,12 +28,21 @@ where
         }
     }
 
+    /// Get a reference to a list of all agents.
+    ///
+    /// Please see the [crate documentation][crate] for examples.
     pub fn agents(&self) -> &[Agent<S, B>] {
         &self.agents
     }
+
     /// Add a new agent to the simulation.
     ///
+    /// After adding the agent to the simulation, [`Behavior::on_creation`] is called with the
+    /// agent and the world state as paramters.
+    ///
     /// Returns a unique identifier for the created agent.
+    ///
+    /// Please see the [crate documentation][crate] for examples.
     pub fn add_agent(&mut self, state: S, behavior: B) -> u64 {
         self.agents
             .push(Agent::new(self.latest_id, state, behavior));
@@ -50,9 +61,15 @@ where
 
     /// Remove an agent by its id.
     ///
+    /// Before removing the agent from the simulation, [`Behavior::on_deletion`] is called with the
+    /// agent as reference.
+    ///
     /// Returns, if the deletion was successful.
+    ///
+    /// Please see the [crate documentation][crate] for examples.
     // TODO(TimDiekmann): Iterating through an array is O(N), better use a
-    //                    slot map or similar here.
+    //                    slot map or similar here. Will change later if
+    //                    enough time left.
     pub fn remove_agent(&mut self, id: u64) -> bool {
         self.agents
             .iter()
@@ -61,7 +78,7 @@ where
                 let agent = &self.agents[pos];
                 agent.behavior().on_deletion(agent);
 
-                // Use `Vec::swap_remove` as order doesn't matter for us and deletion is O(1)
+                // Using `Vec::swap_remove` as order doesn't matter for us and deletion is O(1)
                 self.agents.swap_remove(pos);
                 true
             })
@@ -70,8 +87,6 @@ where
 
 impl<W, S, B> Drop for Simulation<W, S, B>
 where
-    W: State,
-    S: State,
     B: Behavior<State = S, World = W>,
 {
     fn drop(&mut self) {

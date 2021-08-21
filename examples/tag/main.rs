@@ -2,51 +2,38 @@
 
 use serde::{Deserialize, Serialize};
 
-use tag_game::{Agent, Behavior, Simulation, State};
+use tag_game::{Agent, Behavior, Simulation};
 
+/// The state, if an agent is tagged.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
 enum Tag {
+    /// The agent is currently "It"
     It,
+    /// The agent recently was "It"
     Recent,
+    /// The agent can be tagged by "It"
     None,
 }
 
 /// The current State an agent.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
 struct AgentState {
-    tag: Tag,
+    pub tag: Tag,
 }
 
-impl AgentState {
-    pub const fn new(tag: Tag) -> Self {
-        Self { tag }
-    }
-
-    pub const fn tag(self) -> Tag {
-        self.tag
-    }
-}
-
-impl State for AgentState {}
-
-/// The current State an agent.
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
-struct WorldState;
-
-impl State for WorldState {}
-
+/// Prints to the console as soon as an event occurs.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
 struct PrintBehavior;
 
 impl Behavior for PrintBehavior {
     type State = AgentState;
-    type World = WorldState;
+    type World = ();
 
     fn on_creation(&self, agent: &Agent<Self::State, Self>, world: &Self::World) {
         println!(
             "Agent created. id: {}, tag: {:?}",
             agent.id(),
-            agent.state().tag()
+            agent.state().tag
         );
     }
 
@@ -54,24 +41,18 @@ impl Behavior for PrintBehavior {
         println!(
             "Agent removed. id: {}, tag: {:?}",
             agent.id(),
-            agent.state().tag()
+            agent.state().tag
         );
     }
 }
 
 fn main() {
-    let mut simulation = Simulation::new(WorldState);
+    let mut simulation = Simulation::new(());
 
-    let it_state = AgentState::new(Tag::It);
-    let no_state = AgentState::new(Tag::None);
+    let it_state = AgentState { tag: Tag::It };
+    let no_state = AgentState { tag: Tag::None };
 
     simulation.add_agent(it_state, PrintBehavior);
     simulation.add_agent(no_state, PrintBehavior);
     simulation.add_agent(no_state, PrintBehavior);
-
-    // let tagged_state = AgentState::new(it);
-    // println!("{}", serde_json::to_string_pretty(&tagged_state).unwrap());
-
-    // let agent = Agent::new(0, tagged_state, PrintBehavior);
-    // println!("{}", serde_json::to_string_pretty(&agent).unwrap());
 }
