@@ -27,16 +27,16 @@ impl<A: Agent> Simulation<A> {
     /// Returns if an agent with the provided `id` is present to the simulation.
     #[inline]
     pub fn has_agent(&self, id: u64) -> bool {
-        self.state(id).is_some()
+        self.agent(id).is_some()
     }
 
     /// Returns a reference to the state of the agent identified by the provided id.
-    pub fn state(&self, id: u64) -> Option<&A::State> {
+    pub fn agent(&self, id: u64) -> Option<&A::State> {
         self.agents.get(&id).map(|(_, s)| s)
     }
 
     /// Returns a mutable reference to the state of the agent identified by the provided id.
-    pub fn state_mut(&mut self, id: u64) -> Option<&mut A::State> {
+    pub fn agent_mut(&mut self, id: u64) -> Option<&mut A::State> {
         self.agents.get_mut(&id).map(|(_, s)| s)
     }
 
@@ -134,6 +134,44 @@ mod tests {
 
     use crate::{Agent, Simulation};
 
+    struct SimpleAgent;
+    impl Agent for SimpleAgent {
+        type State = u32;
+        type World = ();
+    }
+
+    #[test]
+    fn test_access() {
+        let mut simulation = Simulation::new(());
+
+        let agent_id = simulation.add_agent(SimpleAgent, 42);
+        assert!(simulation.has_agent(agent_id));
+
+        assert_eq!(simulation.agent(agent_id), Some(&42));
+
+        *simulation.agent_mut(agent_id).unwrap() = 43;
+        assert_eq!(simulation.agent(agent_id), Some(&43));
+    }
+
+    #[test]
+    fn test_iteration() {
+        let mut simulation = Simulation::new(());
+
+        let agent_ids = (1..=4)
+            .map(|i| simulation.add_agent(SimpleAgent, i))
+            .collect::<Vec<_>>();
+
+        assert_eq!(simulation.iter().count(), 4);
+
+        for &id in &agent_ids {
+            assert!(simulation.iter().any(|(i, _)| i == id));
+        }
+        simulation.iter_mut().for_each(|(_, s)| *s *= *s);
+        for state in 1..=4 {
+            assert!(simulation.iter().any(|(_, &s)| s == state * state));
+        }
+    }
+
     #[derive(Default)]
     struct Counter {
         on_creation_count: u64,
@@ -171,7 +209,7 @@ mod tests {
     }
 
     #[test]
-    fn test_add_remove() {
+    fn test_callback() {
         let agent = &CountingAgent::default();
 
         assert_eq!(agent.counter.borrow().on_creation_count, 0);
@@ -182,6 +220,7 @@ mod tests {
         let agent_id_1 = simulation.add_agent(agent, ());
         let agent_id_2 = simulation.add_agent(agent, ());
         assert_ne!(agent_id_1, agent_id_2);
+
         assert_eq!(agent.counter.borrow().on_creation_count, 2);
         assert_eq!(agent.counter.borrow().on_deletion_count, 0);
 
