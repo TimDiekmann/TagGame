@@ -1,11 +1,9 @@
 #![allow(unused)]
 
-use serde::{Deserialize, Serialize};
-
-use tag_game::{Agent, Behavior, Simulation};
+use tag_game::{Agent, Simulation};
 
 /// The state, if an agent is tagged.
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Tag {
     /// The agent is currently "It"
     It,
@@ -16,33 +14,25 @@ enum Tag {
 }
 
 /// The current State an agent.
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 struct AgentState {
     pub tag: Tag,
 }
 
 /// Prints to the console as soon as an event occurs.
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 struct PrintBehavior;
 
-impl Behavior for PrintBehavior {
+impl Agent for PrintBehavior {
     type State = AgentState;
     type World = ();
 
-    fn on_creation(&self, agent: &Agent<Self::State, Self>, world: &Self::World) {
-        println!(
-            "Agent created. id: {}, tag: {:?}",
-            agent.id(),
-            agent.state().tag
-        );
+    fn on_creation(&self, id: u64, state: &mut Self::State, _world: &Self::World) {
+        println!("Agent created. id: {}, tag: {:?}", id, state.tag);
     }
 
-    fn on_deletion(&self, agent: &Agent<Self::State, Self>) {
-        println!(
-            "Agent removed. id: {}, tag: {:?}",
-            agent.id(),
-            agent.state().tag
-        );
+    fn on_deletion(&self, id: u64, state: &mut Self::State, _world: &Self::World) {
+        println!("Agent removed. id: {}, tag: {:?}", id, state.tag);
     }
 
     fn on_update<'sim>(
@@ -50,14 +40,14 @@ impl Behavior for PrintBehavior {
         id: u64,
         state: &'sim mut Self::State,
         world: &'sim Self::World,
-        population: impl Iterator<Item = Agent<'sim, Self::State, Self>>,
+        population: impl Iterator<Item = (u64, &'sim Self::State)>,
     ) {
         println!(
             "UPDATE id: {}, state: {:?}, world: {:?}, population: {:?}",
             id,
             state.tag,
             world,
-            population.map(|ag| ag.id()).collect::<Vec<_>>()
+            population.map(|(id, _)| id).collect::<Vec<_>>()
         );
     }
 }
@@ -68,9 +58,9 @@ fn main() {
     let it_state = AgentState { tag: Tag::It };
     let no_state = AgentState { tag: Tag::None };
 
-    simulation.add_agent(it_state, PrintBehavior);
-    simulation.add_agent(no_state, PrintBehavior);
-    simulation.add_agent(no_state, PrintBehavior);
+    simulation.add_agent(PrintBehavior, it_state);
+    simulation.add_agent(PrintBehavior, no_state);
+    simulation.add_agent(PrintBehavior, no_state);
 
     simulation.update();
 }
