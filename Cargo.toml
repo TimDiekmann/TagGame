@@ -8,3 +8,16 @@ license = "MIT"
 keywords = ["agent", "agent-based", "game", "tag"]
 categories = ["games"]
 publish = false
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"], optional = true }
+
+[dev-dependencies]
+serde_json = "1.0"
+
+[features]
+default = ["serde"]
+
+[[example]]
+name = "tag"
+required-features = ["serde"]

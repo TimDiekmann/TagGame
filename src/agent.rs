@@ -1,6 +1,10 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// An Agent is associated with a unique identifier `id` and
 /// its [`State`].
 #[derive(Clone, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Agent<S> {
     /// The unique identifier or this agent
     id: u64,

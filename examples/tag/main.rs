@@ -1,15 +1,17 @@
 #![allow(unused)]
 
+use serde::{Deserialize, Serialize};
+
 use tag_game::Agent;
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
 enum Tag {
     It,
     Recent,
 }
 
 /// The current State an agent.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
 struct State {
     tag: Option<Tag>,
 }
@@ -30,8 +32,8 @@ fn main() {
     let it = Some(Tag::It);
 
     let tagged_state = State::new(it);
-    println!("{:?}", tagged_state);
+    println!("{}", serde_json::to_string_pretty(&tagged_state).unwrap());
 
     let agent = Agent::new(0, tagged_state);
-    println!("{:?}", agent);
+    println!("{}", serde_json::to_string_pretty(&agent).unwrap());
 }
