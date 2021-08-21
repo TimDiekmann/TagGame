@@ -1,5 +1,6 @@
 [![Test Status](https://github.com/TimDiekmann/TagGame/actions/workflows/test.yml/badge.svg?branch=main&event=push)](https://github.com/TimDiekmann/TagGame/actions/workflows/test.yml)
 [![Docs](https://img.shields.io/static/v1?label=docs&message=main&color=5479ab)](https://timdiekmann.github.io/TagGame/tag_game/index.html)
+[![codecov](https://codecov.io/gh/TimDiekmann/TagGame/branch/main/graph/badge.svg?token=RW5JNUBCXQ)](https://codecov.io/gh/TimDiekmann/TagGame)
 
 Tag, You’re It!
 ---------------

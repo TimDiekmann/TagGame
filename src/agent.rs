@@ -79,3 +79,19 @@ impl<S> Agent<S> {
         self.state = state;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::Agent;
+
+    #[test]
+    fn test_agent() {
+        let mut agent = Agent::new(0, "0");
+        assert_eq!(agent.id(), 0);
+        assert_eq!(*agent.state(), "0");
+        agent.set_state("1");
+        assert_eq!(*agent.state(), "1");
+        *agent.state_mut() = "2";
+        assert_eq!(*agent.state(), "2");
+    }
+}
