@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["main",""]]});
+initSidebarItems({"struct":[["Agent","An Agent is associated with a unique identifier `id` and its [`State`]."]],"trait":[["State","The current state associated with an agent."]]});
