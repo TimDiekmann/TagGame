@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Agent","An Agent is associated with a unique identifier `id` and its state. It should not be created directly but with [`Simulation::add_agent()`]."],["Simulation","Adds and removes [`Agent`]s, and updates the them based on their defined behavior."]],"trait":[["Behavior","The behavior of an agent."]]});
+initSidebarItems({"struct":[["Simulation","Adds and removes [`Agent`]s, and updates the them based on their defined behavior."]],"trait":[["Agent","The agent used in the simulation."]]});

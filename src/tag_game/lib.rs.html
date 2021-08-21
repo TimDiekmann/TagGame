@@ -38,16 +38,6 @@
 <span id="38">38</span>
 <span id="39">39</span>
 <span id="40">40</span>
-<span id="41">41</span>
-<span id="42">42</span>
-<span id="43">43</span>
-<span id="44">44</span>
-<span id="45">45</span>
-<span id="46">46</span>
-<span id="47">47</span>
-<span id="48">48</span>
-<span id="49">49</span>
-<span id="50">50</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::must_use_candidate</span>)]</span>
 
 <span class="doccomment">//! # Examples</span>
@@ -55,48 +45,38 @@
 <span class="doccomment">//! To add agents to the simulation, [`Simulation::add_agent()`] and [`Simulation::remove_agent`]</span>
 <span class="doccomment">//! may be called. Each agent requires a [`Behavior`], which has to be implemented.</span>
 <span class="doccomment">//! ```</span>
-<span class="doccomment">//! use tag_game::{Agent, Behavior, Simulation};</span>
+<span class="doccomment">//! use tag_game::{Agent, Simulation};</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! #[derive(Debug, PartialEq)]</span>
-<span class="doccomment">//! struct PrintBehavior;</span>
+<span class="doccomment">//! struct EmptyAgent;</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! impl Behavior for PrintBehavior {</span>
+<span class="doccomment">//! impl Agent for EmptyAgent {</span>
 <span class="doccomment">//!     type State = ();</span>
 <span class="doccomment">//!     type World = ();</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//!     fn on_creation(&amp;self, agent: &amp;Agent&lt;Self::State, Self&gt;, _world: &amp;Self::World) {</span>
-<span class="doccomment">//!         println!(&quot;on creation: {:?}&quot;, agent);</span>
-<span class="doccomment">//!     }</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//!     fn on_deletion(&amp;self, agent: &amp;Agent&lt;Self::State, Self&gt;) {</span>
-<span class="doccomment">//!         println!(&quot;on deletion: {:?}&quot;, agent);</span>
-<span class="doccomment">//!     }</span>
 <span class="doccomment">//! }</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! // Create a simulation with an empty world state</span>
 <span class="doccomment">//! let mut simulation = Simulation::new(());</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! // Add some agents</span>
-<span class="doccomment">//! let agent_id_1 = simulation.add_agent((), PrintBehavior);</span>
-<span class="doccomment">//! let agent_id_2 = simulation.add_agent((), PrintBehavior);</span>
+<span class="doccomment">//! let agent_id_1 = simulation.add_agent(EmptyAgent, ());</span>
+<span class="doccomment">//! let agent_id_2 = simulation.add_agent(EmptyAgent, ());</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! // If desired, an iterator over all agents can be retrieved</span>
-<span class="doccomment">//! let mut agents = simulation.agents();</span>
-<span class="doccomment">//! assert!(agents.find(|ag| ag.id() == agent_id_1).is_some());</span>
+<span class="doccomment">//! let mut agents = simulation.iter();</span>
+<span class="doccomment">//! assert!(agents.find(|(id, _)| *id == agent_id_1).is_some());</span>
 <span class="doccomment">//! // needed for dropck</span>
 <span class="doccomment">//! drop(agents);</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! // If an agent is not needed anymore, they can be removed</span>
 <span class="doccomment">//! simulation.remove_agent(agent_id_1);</span>
-<span class="doccomment">//! assert!(simulation.agents().find(|ag| ag.id() == agent_id_1).is_none());</span>
+<span class="doccomment">//! assert!(simulation.iter().find(|(id, _)| *id == agent_id_1).is_none());</span>
 <span class="doccomment">//! ```</span>
 
 <span class="kw">mod</span> <span class="ident">agent</span>;
-<span class="kw">mod</span> <span class="ident">behavior</span>;
 <span class="kw">mod</span> <span class="ident">simulation</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::agent::Agent</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::behavior::Behavior</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::simulation::Simulation</span>;
 </code></pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="tag_game" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
