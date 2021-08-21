@@ -46,6 +46,8 @@
 <span id="46">46</span>
 <span id="47">47</span>
 <span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::must_use_candidate</span>)]</span>
 
 <span class="doccomment">//! # Examples</span>
@@ -78,13 +80,15 @@
 <span class="doccomment">//! let agent_id_1 = simulation.add_agent((), PrintBehavior);</span>
 <span class="doccomment">//! let agent_id_2 = simulation.add_agent((), PrintBehavior);</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! // If desired, a list of all agents can be retrieved</span>
-<span class="doccomment">//! let agents = simulation.agents();</span>
-<span class="doccomment">//! assert!(agents.iter().find(|ag| ag.id() == agent_id_1).is_some());</span>
+<span class="doccomment">//! // If desired, an iterator over all agents can be retrieved</span>
+<span class="doccomment">//! let mut agents = simulation.agents();</span>
+<span class="doccomment">//! assert!(agents.find(|ag| ag.id() == agent_id_1).is_some());</span>
+<span class="doccomment">//! // needed for dropck</span>
+<span class="doccomment">//! drop(agents);</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! // If an agent is not needed anymore, they can be removed</span>
 <span class="doccomment">//! simulation.remove_agent(agent_id_1);</span>
-<span class="doccomment">//! assert!(simulation.agents().iter().find(|ag| ag.id() == agent_id_1).is_none());</span>
+<span class="doccomment">//! assert!(simulation.agents().find(|ag| ag.id() == agent_id_1).is_none());</span>
 <span class="doccomment">//! ```</span>
 
 <span class="kw">mod</span> <span class="ident">agent</span>;
