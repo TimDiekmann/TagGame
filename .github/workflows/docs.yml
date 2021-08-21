@@ -39,9 +39,8 @@ jobs:
           name: Documentation
           path: target/doc
 
-      - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@releases/v3
+      - name: Deploy documentation
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          ACCESS_TOKEN: ${{ secrets.GH_PAT }}
-          BRANCH: gh-pages
-          FOLDER: target/doc
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./target/doc
