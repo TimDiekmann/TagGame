@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["tag_game"] = [{"text":"impl&lt;S&gt; <a class=\"trait\" href=\"https://docs.rs/serde/1.0.127/serde/ser/trait.Serialize.html\" title=\"trait serde::ser::Serialize\">Serialize</a> for <a class=\"struct\" href=\"tag_game/struct.Agent.html\" title=\"struct tag_game::Agent\">Agent</a>&lt;S&gt; <span class=\"where fmt-newline\">where<br>&nbsp;&nbsp;&nbsp;&nbsp;S: <a class=\"trait\" href=\"https://docs.rs/serde/1.0.127/serde/ser/trait.Serialize.html\" title=\"trait serde::ser::Serialize\">Serialize</a>,&nbsp;</span>","synthetic":false,"types":["tag_game::agent::Agent"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
