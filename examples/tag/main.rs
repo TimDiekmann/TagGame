@@ -1,11 +1,9 @@
 #![allow(unused)]
 
-use serde::{Deserialize, Serialize};
-
 use tag_game::{Agent, Simulation};
 
 /// The state, if an agent is tagged.
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Tag {
     /// The agent is currently "It"
     It,
@@ -16,24 +14,24 @@ enum Tag {
 }
 
 /// The current State an agent.
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 struct AgentState {
     pub tag: Tag,
 }
 
 /// Prints to the console as soon as an event occurs.
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 struct PrintBehavior;
 
 impl Agent for PrintBehavior {
     type State = AgentState;
     type World = ();
 
-    fn on_creation(&self, id: u64, state: &Self::State, _world: &Self::World) {
+    fn on_creation(&self, id: u64, state: &mut Self::State, _world: &Self::World) {
         println!("Agent created. id: {}, tag: {:?}", id, state.tag);
     }
 
-    fn on_deletion(&self, id: u64, state: &Self::State, _world: &Self::World) {
+    fn on_deletion(&self, id: u64, state: &mut Self::State, _world: &Self::World) {
         println!("Agent removed. id: {}, tag: {:?}", id, state.tag);
     }
 
@@ -60,9 +58,9 @@ fn main() {
     let it_state = AgentState { tag: Tag::It };
     let no_state = AgentState { tag: Tag::None };
 
-    simulation.add_agent(it_state, PrintBehavior);
-    simulation.add_agent(no_state, PrintBehavior);
-    simulation.add_agent(no_state, PrintBehavior);
+    simulation.add_agent(PrintBehavior, it_state);
+    simulation.add_agent(PrintBehavior, no_state);
+    simulation.add_agent(PrintBehavior, no_state);
 
     simulation.update();
 }
