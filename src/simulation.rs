@@ -1,6 +1,6 @@
 use std::collections::hash_map::{Entry, HashMap};
 
-use crate::{Agent, Behavior};
+use crate::Behavior;
 
 /// Adds and removes [`Agent`]s, and updates the them
 /// based on their defined behavior.
@@ -30,13 +30,44 @@ where
         }
     }
 
-    /// Get an iterator over all agents.
+    /// Returns if an agent with the provided `id` is added to the simulation.
+    #[inline]
+    pub fn has_agent(&self, id: u64) -> bool {
+        self.state(id).is_some()
+    }
+
+    /// Returns a reference to the state of the agent identified by the provided id.
+    pub fn state(&self, id: u64) -> Option<&S> {
+        self.agents.get(&id).map(|(s, _)| s)
+    }
+
+    /// Returns a mutable reference to the state of the agent identified by the provided id.
+    pub fn state_mut(&mut self, id: u64) -> Option<&mut S> {
+        self.agents.get_mut(&id).map(|(s, _)| s)
+    }
+
+    /// Returns a reference to the behavior of the agent identified by the provided id.
+    pub fn behavior(&self, id: u64) -> Option<&B> {
+        self.agents.get(&id).map(|(_, b)| b)
+    }
+
+    /// Returns a mutable reference to the behavior of the agent identified by the provided id.
+    pub fn behavior_mut(&mut self, id: u64) -> Option<&mut B> {
+        self.agents.get_mut(&id).map(|(_, b)| b)
+    }
+
+    /// Returns an iterator over all agents added to the simulation.
     ///
     /// Please see the [crate documentation][crate] for examples.
-    pub fn agents(&self) -> impl Iterator<Item = Agent<S, B>> {
-        self.agents
-            .iter()
-            .map(|ag| Agent::new(*ag.0, &(ag.1).0, &(ag.1).1))
+    pub fn agents(&self) -> impl Iterator<Item = (u64, &S)> {
+        self.agents.iter().map(|ag| (*ag.0, &(ag.1).0))
+    }
+
+    /// Returns a mutable iterator over all agents added to the simulation.
+    ///
+    /// Please see the [crate documentation][crate] for examples.
+    pub fn agents_mut(&mut self) -> impl Iterator<Item = (u64, &mut S)> {
+        self.agents.iter_mut().map(|ag| (*ag.0, &mut (ag.1).0))
     }
 
     /// Add a new agent to the simulation.
@@ -59,7 +90,7 @@ where
             panic!("All {} IDs were used, you beat the system!", u64::MAX)
         };
 
-        behavior.on_creation(&Agent::new(id, state, behavior), &self.world);
+        behavior.on_creation(id, state, &self.world);
 
         self.latest_id += 1;
         id
@@ -76,7 +107,7 @@ where
     pub fn remove_agent(&mut self, id: u64) -> bool {
         if let Entry::Occupied(entry) = self.agents.entry(id) {
             let (state, behavior) = entry.get();
-            behavior.on_deletion(&Agent::new(id, state, behavior));
+            behavior.on_deletion(id, state, &self.world);
             entry.remove();
             true
         } else {
@@ -104,7 +135,7 @@ where
                 agents_copy
                     .iter()
                     .filter(|(&ag_id, _)| ag_id != id)
-                    .map(|ag| Agent::new(*ag.0, &(ag.1).0, &(ag.1).1)),
+                    .map(|(&id, (s, _))| (id, s)),
             );
         }
     }
@@ -115,8 +146,8 @@ where
     B: Behavior<State = S, World = W>,
 {
     fn drop(&mut self) {
-        for (id, (state, behavior)) in &self.agents {
-            behavior.on_deletion(&Agent::new(*id, state, behavior));
+        for (&id, (state, behavior)) in &self.agents {
+            behavior.on_deletion(id, state, &self.world);
         }
     }
 }
@@ -143,11 +174,11 @@ mod tests {
         type State = ();
         type World = ();
 
-        fn on_creation(&self, _agent: &crate::Agent<Self::State, Self>, _world: &Self::World) {
+        fn on_creation(&self, _id: u64, _state: &Self::State, _world: &Self::World) {
             self.counter.borrow_mut().on_creation_count += 1;
         }
 
-        fn on_deletion(&self, _agent: &crate::Agent<Self::State, Self>) {
+        fn on_deletion(&self, _id: u64, _state: &Self::State, _world: &Self::World) {
             self.counter.borrow_mut().on_deletion_count += 1;
         }
 
@@ -156,10 +187,10 @@ mod tests {
             id: u64,
             _state: &'sim mut Self::State,
             _world: &'sim Self::World,
-            mut population: impl Iterator<Item = crate::Agent<'sim, Self::State, Self>>,
+            mut population: impl Iterator<Item = (u64, &'sim Self::State)>,
         ) {
             self.counter.borrow_mut().on_update_count += 1;
-            assert!(!population.any(|ag| ag.id() == id));
+            assert!(!population.any(|(i, _)| i == id));
         }
     }
 

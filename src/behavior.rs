@@ -1,5 +1,3 @@
-use crate::Agent;
-
 /// The behavior of an agent.
 pub trait Behavior: Sized {
     /// The state associated with the agent
@@ -8,27 +6,21 @@ pub trait Behavior: Sized {
     type World;
 
     /// Called when an agent is created to the world.
-    fn on_creation(&self, agent: &Agent<Self::State, Self>, world: &Self::World) {
-        let _ = agent;
-        let _ = world;
-    }
+    #[allow(unused_variables)]
+    fn on_creation(&self, id: u64, state: &Self::State, world: &Self::World) {}
 
     /// Called when an agent is removed from the world.
-    fn on_deletion(&self, agent: &Agent<Self::State, Self>) {
-        let _ = agent;
-    }
+    #[allow(unused_variables)]
+    fn on_deletion(&self, id: u64, state: &Self::State, world: &Self::World) {}
 
     /// Called when the simulation is updated.
+    #[allow(unused_variables)]
     fn on_update<'sim>(
         &'sim self,
         id: u64,
         state: &'sim mut Self::State,
         world: &'sim Self::World,
-        population: impl Iterator<Item = Agent<'sim, Self::State, Self>>,
+        population: impl Iterator<Item = (u64, &'sim Self::State)>,
     ) {
-        let _ = id;
-        let _ = state;
-        let _ = world;
-        drop(population);
     }
 }
