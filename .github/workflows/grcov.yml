@@ -49,7 +49,7 @@ jobs:
       - name: Generate coverage data
         id: grcov
         run: |
-          grcov target/debug/ \
+          grcov . \
               --branch \
               --llvm \
               --source-dir . \
@@ -58,8 +58,8 @@ jobs:
               --ignore='C:/**' \
               --ignore='../**' \
               --ignore-not-existing \
-              --excl-line "#\\[derive\\(" \
-              --excl-br-line "#\\[derive\\(" \
+              --excl-line "^#" \
+              --excl-br-line "^#" \
               --excl-start "#\\[cfg\\(test\\)\\]" \
               --excl-br-start "#\\[cfg\\(test\\)\\]" \
               --commit-sha ${{ github.sha }} \
