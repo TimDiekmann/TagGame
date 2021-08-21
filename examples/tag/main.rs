@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use tag_game::{Behavior, Simulation};
+use tag_game::{Agent, Simulation};
 
 /// The state, if an agent is tagged.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -25,7 +25,7 @@ struct AgentState {
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
 struct PrintBehavior;
 
-impl Behavior for PrintBehavior {
+impl Agent for PrintBehavior {
     type State = AgentState;
     type World = ();
 

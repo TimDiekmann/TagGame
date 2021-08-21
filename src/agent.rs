@@ -1,5 +1,5 @@
 /// The behavior of an agent.
-pub trait Behavior: Sized {
+pub trait Agent: Sized {
     /// The state associated with the agent
     type State;
     /// The state of the world, provided by the simulation

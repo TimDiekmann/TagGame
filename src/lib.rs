@@ -5,12 +5,12 @@
 //! To add agents to the simulation, [`Simulation::add_agent()`] and [`Simulation::remove_agent`]
 //! may be called. Each agent requires a [`Behavior`], which has to be implemented.
 //! ```
-//! use tag_game::{Behavior, Simulation};
+//! use tag_game::{Agent, Simulation};
 //!
 //! #[derive(Debug, PartialEq)]
-//! struct EmptyBehavior;
+//! struct EmptyAgent;
 //!
-//! impl Behavior for EmptyBehavior {
+//! impl Agent for EmptyAgent {
 //!     type State = ();
 //!     type World = ();
 //! }
@@ -19,8 +19,8 @@
 //! let mut simulation = Simulation::new(());
 //!
 //! // Add some agents
-//! let agent_id_1 = simulation.add_agent((), EmptyBehavior);
-//! let agent_id_2 = simulation.add_agent((), EmptyBehavior);
+//! let agent_id_1 = simulation.add_agent((), EmptyAgent);
+//! let agent_id_2 = simulation.add_agent((), EmptyAgent);
 //!
 //! // If desired, an iterator over all agents can be retrieved
 //! let mut agents = simulation.agents();
@@ -33,8 +33,8 @@
 //! assert!(simulation.agents().find(|(id, _)| *id == agent_id_1).is_none());
 //! ```
 
-mod behavior;
+mod agent;
 mod simulation;
 
-pub use self::behavior::Behavior;
+pub use self::agent::Agent;
 pub use self::simulation::Simulation;

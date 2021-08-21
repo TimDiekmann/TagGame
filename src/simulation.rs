@@ -1,6 +1,6 @@
 use std::collections::hash_map::{Entry, HashMap};
 
-use crate::Behavior;
+use crate::Agent;
 
 /// Adds and removes [`Agent`]s, and updates the them
 /// based on their defined behavior.
@@ -8,7 +8,7 @@ use crate::Behavior;
 /// Please see the [crate documentation][crate] for examples.
 pub struct Simulation<W, S, B>
 where
-    B: Behavior<State = S, World = W>,
+    B: Agent<State = S, World = W>,
 {
     world: W,
     agents: HashMap<u64, (S, B)>,
@@ -17,7 +17,7 @@ where
 
 impl<W, S, B> Simulation<W, S, B>
 where
-    B: Behavior<State = S, World = W>,
+    B: Agent<State = S, World = W>,
 {
     /// Creates a simulation, where different agents can be created.
     ///
@@ -119,7 +119,7 @@ where
 impl<W, S, B> Simulation<W, S, B>
 where
     S: Clone,
-    B: Behavior<State = S, World = W> + Clone,
+    B: Agent<State = S, World = W> + Clone,
 {
     /// Calls [`Behavior::on_update`] for every registered agent.
     ///
@@ -143,7 +143,7 @@ where
 
 impl<W, S, B> Drop for Simulation<W, S, B>
 where
-    B: Behavior<State = S, World = W>,
+    B: Agent<State = S, World = W>,
 {
     fn drop(&mut self) {
         for (&id, (state, behavior)) in &self.agents {
@@ -156,7 +156,7 @@ where
 mod tests {
     use std::cell::RefCell;
 
-    use crate::{Behavior, Simulation};
+    use crate::{Agent, Simulation};
 
     #[derive(Default)]
     struct Counter {
@@ -166,11 +166,11 @@ mod tests {
     }
 
     #[derive(Default)]
-    struct CountingBehavior {
+    struct CountingAgent {
         counter: RefCell<Counter>,
     }
 
-    impl Behavior for &CountingBehavior {
+    impl Agent for &CountingAgent {
         type State = ();
         type World = ();
 
@@ -196,7 +196,7 @@ mod tests {
 
     #[test]
     fn test_add_remove() {
-        let behavior = CountingBehavior::default();
+        let behavior = CountingAgent::default();
 
         assert_eq!(behavior.counter.borrow().on_creation_count, 0);
         assert_eq!(behavior.counter.borrow().on_deletion_count, 0);
