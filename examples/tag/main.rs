@@ -44,6 +44,22 @@ impl Behavior for PrintBehavior {
             agent.state().tag
         );
     }
+
+    fn on_update<'sim>(
+        &'sim self,
+        id: u64,
+        state: &'sim mut Self::State,
+        world: &'sim Self::World,
+        population: impl Iterator<Item = Agent<'sim, Self::State, Self>>,
+    ) {
+        println!(
+            "UPDATE id: {}, state: {:?}, world: {:?}, population: {:?}",
+            id,
+            state.tag,
+            world,
+            population.map(|ag| ag.id()).collect::<Vec<_>>()
+        );
+    }
 }
 
 fn main() {
@@ -55,4 +71,6 @@ fn main() {
     simulation.add_agent(it_state, PrintBehavior);
     simulation.add_agent(no_state, PrintBehavior);
     simulation.add_agent(no_state, PrintBehavior);
+
+    simulation.update();
 }

@@ -30,13 +30,15 @@
 //! let agent_id_1 = simulation.add_agent((), PrintBehavior);
 //! let agent_id_2 = simulation.add_agent((), PrintBehavior);
 //!
-//! // If desired, a list of all agents can be retrieved
-//! let agents = simulation.agents();
-//! assert!(agents.iter().find(|ag| ag.id() == agent_id_1).is_some());
+//! // If desired, an iterator over all agents can be retrieved
+//! let mut agents = simulation.agents();
+//! assert!(agents.find(|ag| ag.id() == agent_id_1).is_some());
+//! // needed for dropck
+//! drop(agents);
 //!
 //! // If an agent is not needed anymore, they can be removed
 //! simulation.remove_agent(agent_id_1);
-//! assert!(simulation.agents().iter().find(|ag| ag.id() == agent_id_1).is_none());
+//! assert!(simulation.agents().find(|ag| ag.id() == agent_id_1).is_none());
 //! ```
 
 mod agent;

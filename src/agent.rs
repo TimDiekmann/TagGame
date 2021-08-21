@@ -1,29 +1,26 @@
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 /// An Agent is associated with a unique identifier `id` and
-/// its state.
+/// its state. It should not be created directly but with
+/// [`Simulation::add_agent()`].
 #[derive(Clone, PartialEq, Eq, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Agent<S, B> {
+pub struct Agent<'sim, S, B> {
     /// The unique identifier or this agent.
     id: u64,
     /// The current state of this agent.
-    state: S,
+    state: &'sim S,
     /// The behavior or this agent.
-    behavior: B,
+    behavior: &'sim B,
 }
 
-impl<S, B> Agent<S, B> {
+impl<'sim, S, B> Agent<'sim, S, B> {
     /// Creates a new agent with the provided identifier, the state, and the behavior.
     ///
     /// ```
     /// use tag_game::Agent;
     ///
-    /// let agent = Agent::new(0, "state", ());
+    /// let agent = Agent::new(0, &"state", &());
     /// println!("{:?}", agent);
     /// ```
-    pub const fn new(id: u64, state: S, behavior: B) -> Self {
+    pub const fn new(id: u64, state: &'sim S, behavior: &'sim B) -> Self {
         Self {
             id,
             state,
@@ -36,7 +33,7 @@ impl<S, B> Agent<S, B> {
     /// ```
     /// use tag_game::Agent;
     ///
-    /// let agent = Agent::new(0, "state", ());
+    /// let agent = Agent::new(0, &"state", &());
     ///
     /// assert_eq!(agent.id(), 0);
     /// ```
@@ -49,26 +46,12 @@ impl<S, B> Agent<S, B> {
     /// ```
     /// use tag_game::Agent;
     ///
-    /// let agent = Agent::new(0, "state", ());
+    /// let agent = Agent::new(0, &"state", &());
     ///
     /// assert_eq!(*agent.state(), "state");
     /// ```
     pub const fn state(&self) -> &S {
-        &self.state
-    }
-
-    /// Get a mutable reference to the agent's state.
-    ///
-    /// ```
-    /// use tag_game::Agent;
-    ///
-    /// let mut agent = Agent::new(0, String::from("state of the agent"), ());
-    ///
-    /// agent.state_mut().truncate(5);
-    /// assert_eq!(*agent.state(), "state");
-    /// ```
-    pub fn state_mut(&mut self) -> &mut S {
-        &mut self.state
+        self.state
     }
 
     /// Get a reference to the agent's behavior.
@@ -76,28 +59,12 @@ impl<S, B> Agent<S, B> {
     /// ```
     /// use tag_game::Agent;
     ///
-    /// let mut agent = Agent::new(0, "state", 10);
+    /// let mut agent = Agent::new(0, &"state", &10);
     ///
     /// assert_eq!(*agent.behavior(), 10);
     /// ```
     pub const fn behavior(&self) -> &B {
-        &self.behavior
-    }
-
-    /// Get a mutable reference to the agent's behavior.
-    ///
-    /// ```
-    /// use std::mem;
-    /// use tag_game::Agent;
-    ///
-    /// let mut agent = Agent::new(0, "state", 10);
-    ///
-    /// let old_behavior = mem::replace(agent.behavior_mut(), 20);
-    /// assert_eq!(old_behavior, 10);
-    /// assert_eq!(*agent.behavior(), 20);
-    /// ```
-    pub fn behavior_mut(&mut self) -> &mut B {
-        &mut self.behavior
+        self.behavior
     }
 }
 
@@ -107,15 +74,10 @@ mod tests {
 
     #[test]
     fn test_agent() {
-        let mut agent = Agent::new(0, "0", 0);
+        let agent = Agent::new(0, &"0", &0);
         assert_eq!(agent.id(), 0);
 
         assert_eq!(*agent.state(), "0");
-        *agent.state_mut() = "1";
-        assert_eq!(*agent.state(), "1");
-
         assert_eq!(*agent.behavior(), 0);
-        *agent.behavior_mut() = 1;
-        assert_eq!(*agent.behavior(), 1);
     }
 }
