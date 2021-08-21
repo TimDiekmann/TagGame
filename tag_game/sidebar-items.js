@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Agent","An Agent is associated with a unique identifier `id` and its [`State`]."]],"trait":[["State","The current state associated with an agent."]]});
+initSidebarItems({"struct":[["Agent","An Agent is associated with a unique identifier `id` and its state."],["Simulation","Adds and removes [`Agent`]s, and updates the them based on their defined behavior."]],"trait":[["Behavior","The behavior of an agent."]]});
