@@ -9,11 +9,11 @@
 ///
 /// The world is a global state, which can only be changed outside of the simulation and is passed
 /// to every agent.
-pub trait Agent: Sized {
+pub trait Agent: Sized + Send + Sync {
     /// The state associated with the agent
-    type State;
+    type State: Send + Sync;
     /// The state of the world, provided by the simulation
-    type World;
+    type World: Sync;
 
     /// Called when an agent is added to the simulation.
     #[allow(unused_variables)]

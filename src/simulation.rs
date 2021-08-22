@@ -1,5 +1,7 @@
 use std::collections::hash_map::{Entry, HashMap};
 
+use rayon::prelude::*;
+
 use crate::Agent;
 
 /// Adds and removes [`Agent`]s, and updates the them
@@ -116,17 +118,20 @@ where
     /// Calls [`Agent::on_update`] for every registered agent.
     pub fn update(&mut self) {
         let agents_copy = self.agents.clone();
-        for (&id, (agent, state)) in &mut self.agents {
-            agent.on_update(
-                id,
-                state,
-                &self.world,
-                agents_copy
-                    .iter()
-                    .filter(|(&ag_id, _)| ag_id != id)
-                    .map(|(&id, (_, s))| (id, s)),
-            );
-        }
+        let world = &self.world;
+        self.agents
+            .par_iter_mut()
+            .for_each(|(&id, (agent, state))| {
+                agent.on_update(
+                    id,
+                    state,
+                    world,
+                    agents_copy
+                        .iter()
+                        .filter(|(&ag_id, _)| ag_id != id)
+                        .map(|(&id, (_, s))| (id, s)),
+                );
+            });
     }
 }
 
@@ -140,7 +145,7 @@ impl<A: Agent> Drop for Simulation<A> {
 
 #[cfg(test)]
 mod tests {
-    use std::cell::RefCell;
+    use std::sync::atomic::{AtomicU64, Ordering};
 
     use crate::{Agent, Simulation};
 
@@ -200,15 +205,10 @@ mod tests {
     }
 
     #[derive(Default)]
-    struct Counter {
-        on_creation_count: u64,
-        on_deletion_count: u64,
-        on_update_count: u64,
-    }
-
-    #[derive(Default)]
     struct CountingAgent {
-        counter: RefCell<Counter>,
+        on_creation_count: AtomicU64,
+        on_deletion_count: AtomicU64,
+        on_update_count: AtomicU64,
     }
 
     impl Agent for &CountingAgent {
@@ -216,21 +216,21 @@ mod tests {
         type World = ();
 
         fn on_creation(&self, _id: u64, _state: &mut Self::State, _world: &Self::World) {
-            self.counter.borrow_mut().on_creation_count += 1;
+            self.on_creation_count.fetch_add(1, Ordering::Relaxed);
         }
 
         fn on_deletion(&self, _id: u64, _state: &mut Self::State, _world: &Self::World) {
-            self.counter.borrow_mut().on_deletion_count += 1;
+            self.on_deletion_count.fetch_add(1, Ordering::Relaxed);
         }
 
         fn on_update<'sim>(
             &'sim self,
-            id: u64,
+            _id: u64,
             _state: &'sim mut Self::State,
             _world: &'sim Self::World,
             mut population: impl Iterator<Item = (u64, &'sim Self::State)>,
         ) {
-            self.counter.borrow_mut().on_update_count += 1;
+            self.on_update_count.fetch_add(1, Ordering::SeqCst);
             assert!(!population.any(|(i, _)| i == id));
         }
     }
@@ -239,8 +239,8 @@ mod tests {
     fn test_callback() {
         let agent = &CountingAgent::default();
 
-        assert_eq!(agent.counter.borrow().on_creation_count, 0);
-        assert_eq!(agent.counter.borrow().on_deletion_count, 0);
+        assert_eq!(agent.on_creation_count.load(Ordering::Relaxed), 0);
+        assert_eq!(agent.on_deletion_count.load(Ordering::Relaxed), 0);
 
         let mut simulation = Simulation::new(());
 
@@ -248,31 +248,31 @@ mod tests {
         let agent_id_2 = simulation.add_agent(agent, ());
         assert_ne!(agent_id_1, agent_id_2);
 
-        assert_eq!(agent.counter.borrow().on_creation_count, 2);
-        assert_eq!(agent.counter.borrow().on_deletion_count, 0);
+        assert_eq!(agent.on_creation_count.load(Ordering::Relaxed), 2);
+        assert_eq!(agent.on_deletion_count.load(Ordering::Relaxed), 0);
 
-        assert_eq!(agent.counter.borrow().on_update_count, 0);
+        assert_eq!(agent.on_update_count.load(Ordering::SeqCst), 0);
         simulation.update();
-        assert_eq!(agent.counter.borrow().on_update_count, 2);
+        assert_eq!(agent.on_update_count.load(Ordering::SeqCst), 2);
 
         assert!(simulation.remove_agent(agent_id_1));
-        assert_eq!(agent.counter.borrow().on_creation_count, 2);
-        assert_eq!(agent.counter.borrow().on_deletion_count, 1);
+        assert_eq!(agent.on_creation_count.load(Ordering::Relaxed), 2);
+        assert_eq!(agent.on_deletion_count.load(Ordering::Relaxed), 1);
 
-        assert_eq!(agent.counter.borrow().on_update_count, 2);
+        assert_eq!(agent.on_update_count.load(Ordering::SeqCst), 2);
         simulation.update();
-        assert_eq!(agent.counter.borrow().on_update_count, 3);
+        assert_eq!(agent.on_update_count.load(Ordering::SeqCst), 3);
 
         assert!(!simulation.remove_agent(agent_id_1));
-        assert_eq!(agent.counter.borrow().on_creation_count, 2);
-        assert_eq!(agent.counter.borrow().on_deletion_count, 1);
+        assert_eq!(agent.on_creation_count.load(Ordering::Relaxed), 2);
+        assert_eq!(agent.on_deletion_count.load(Ordering::Relaxed), 1);
 
-        assert_eq!(agent.counter.borrow().on_update_count, 3);
+        assert_eq!(agent.on_update_count.load(Ordering::SeqCst), 3);
         simulation.update();
-        assert_eq!(agent.counter.borrow().on_update_count, 4);
+        assert_eq!(agent.on_update_count.load(Ordering::SeqCst), 4);
 
         drop(simulation);
-        assert_eq!(agent.counter.borrow().on_creation_count, 2);
-        assert_eq!(agent.counter.borrow().on_deletion_count, 2);
+        assert_eq!(agent.on_creation_count.load(Ordering::Relaxed), 2);
+        assert_eq!(agent.on_deletion_count.load(Ordering::Relaxed), 2);
     }
 }
