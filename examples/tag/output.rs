@@ -144,30 +144,23 @@ impl Output {
         )
     }
 
-    /// Draws the player onto the board]
+    /// Draws the player onto the board
     pub fn draw_players<'sim>(&mut self, states: impl Iterator<Item = (u64, &'sim AgentState)>) {
-        // self.draw_borders()?;
         for (x, y) in &self.drawn_positions {
-            if *x < self.terminal_size.0 && *y + 1 < self.terminal_size.1 {
-                if let Some((x, y)) = self.position_to_pixel(*x, *y) {
-                    print!("{} ", cursor::Goto(x, y));
-                }
+            if let Some((x, y)) = self.position_to_pixel(*x, *y) {
+                print!("{} ", cursor::Goto(x, y));
             }
         }
         self.drawn_positions.clear();
         for (_id, state) in states {
-            let x = state.position[0];
-            let y = state.position[1];
-            self.drawn_positions.push((x, y));
-            match state.tag {
-                Tag::It => {
-                    self.draw(x, y, '@', Some(color::Red.fg_str()));
-                }
-                Tag::Recent => {
-                    self.draw(x, y, '%', Some(color::Yellow.fg_str()));
-                }
-                Tag::None => {
-                    self.draw(x, y, '#', Some(color::Green.fg_str()));
+            let x_pos = state.position[0];
+            let y_pos = state.position[1];
+            if let Some((x, y)) = self.position_to_pixel(x_pos, y_pos) {
+                self.drawn_positions.push((x_pos, y_pos));
+                match state.tag {
+                    Tag::It => print!("{}{}@", cursor::Goto(x, y), color::Red.fg_str()),
+                    Tag::Recent => print!("{}{}%", cursor::Goto(x, y), color::Yellow.fg_str()),
+                    Tag::None => print!("{}{}#", cursor::Goto(x, y), color::Green.fg_str()),
                 }
             }
         }
