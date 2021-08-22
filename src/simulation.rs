@@ -164,6 +164,23 @@ mod tests {
     }
 
     #[test]
+    fn test_world() {
+        struct WorldTestAgent;
+
+        impl Agent for WorldTestAgent {
+            type State = ();
+            type World = &'static str;
+        }
+
+        let mut simulation = Simulation::<WorldTestAgent>::new("world");
+
+        assert_eq!(*simulation.world(), "world");
+
+        *simulation.world_mut() = "hello";
+        assert_eq!(*simulation.world(), "hello");
+    }
+
+    #[test]
     fn test_iteration() {
         let mut simulation = Simulation::new(());
 
