@@ -9,10 +9,8 @@ use crate::agent::{AgentState, Tag, TagAgent};
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct Board {
     /// The width of the board.
-    #[serde(default = "Board::default_width")]
     pub width: u16,
     /// The height of the board.
-    #[serde(default = "Board::default_height")]
     pub height: u16,
 }
 
@@ -22,16 +20,6 @@ impl Default for Board {
             width: 50,
             height: 50,
         }
-    }
-}
-
-impl Board {
-    fn default_width() -> u16 {
-        Self::default().width
-    }
-
-    fn default_height() -> u16 {
-        Self::default().height
     }
 }
 

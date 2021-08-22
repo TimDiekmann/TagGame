@@ -5,16 +5,15 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::Board;
+use crate::{agent::Properties, Board};
 
 /// Configuration for the Tag game
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub board: Board,
-    #[serde(default = "Config::default_num_players")]
     pub num_players: u64,
-    #[serde(default = "Config::default_step")]
     pub step: u32,
+    pub player_properties: Properties,
 }
 
 impl Default for Config {
@@ -23,6 +22,7 @@ impl Default for Config {
             board: Board::default(),
             num_players: 10,
             step: 1,
+            player_properties: Properties::default(),
         }
     }
 }
@@ -36,18 +36,15 @@ impl Config {
         if let Ok(file) = File::open(&config_file_path) {
             Ok(serde_json::from_reader(BufReader::new(file))?)
         } else {
-            let writer = BufWriter::new(OpenOptions::new().write(true).open(config_file_path)?);
+            let writer = BufWriter::new(
+                OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .open(config_file_path)?,
+            );
             let config = Self::default();
             serde_json::to_writer_pretty(writer, &Self::default())?;
             Ok(config)
         }
-    }
-
-    fn default_num_players() -> u64 {
-        Self::default().num_players
-    }
-
-    fn default_step() -> u32 {
-        Self::default().step
     }
 }

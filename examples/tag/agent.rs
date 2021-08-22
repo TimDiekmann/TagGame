@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
 use rand::{thread_rng, Rng};
+use serde::{Deserialize, Serialize};
+
 use tag_game::Agent;
 
 use crate::world::{Board, TagWorld};
@@ -34,11 +36,32 @@ impl Position {
     }
 }
 
+/// Configuration for player properties and behaviors
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct Properties {
+    pub untagged_deciding: f64,
+    pub tagged_deciding: f64,
+    pub untagged_speed_multiplied: f32,
+    pub tagged_speed_multiplied: f32,
+}
+
+impl Default for Properties {
+    fn default() -> Self {
+        Self {
+            untagged_deciding: 0.6,
+            tagged_deciding: 0.9,
+            untagged_speed_multiplied: 0.9,
+            tagged_speed_multiplied: 1.1,
+        }
+    }
+}
+
 /// The current State an agent.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct AgentState {
     pub tag: Tag,
     pub position: Position,
+    pub properties: Properties,
 }
 
 /// The implementation for the Tag Agent
@@ -97,16 +120,18 @@ impl Agent for TagAgent {
                 let Position { x: ag_x, y: ag_y } = population[&nearest.0].1.position;
                 let Position { x, y } = state.position;
 
-                let dx = if ag_x > x && rng.gen_bool(0.9) {
+                let mut dx = if ag_x > x { 1. } else { -1. };
+                let mut dy = if ag_y > y { 1. } else { -1. };
+                dx *= if rng.gen_bool(state.properties.tagged_deciding) {
                     1.
                 } else {
                     -1.
-                };
-                let dy = if ag_y > y && rng.gen_bool(0.9) {
+                } * state.properties.tagged_speed_multiplied;
+                dy *= if rng.gen_bool(state.properties.tagged_deciding) {
                     1.
                 } else {
                     -1.
-                };
+                } * state.properties.tagged_speed_multiplied;
 
                 run(state, world.board, dx, dy);
             }
@@ -123,8 +148,16 @@ impl Agent for TagAgent {
 
                 let mut dx = if it_x < x { 1. } else { -1. };
                 let mut dy = if it_y < y { 1. } else { -1. };
-                dx *= if rng.gen_bool(0.7) { 1. } else { -1. };
-                dy *= if rng.gen_bool(0.7) { 1. } else { -1. };
+                dx *= if rng.gen_bool(state.properties.untagged_deciding) {
+                    1.
+                } else {
+                    -1.
+                } * state.properties.untagged_speed_multiplied;
+                dy *= if rng.gen_bool(state.properties.untagged_deciding) {
+                    1.
+                } else {
+                    -1.
+                } * state.properties.untagged_speed_multiplied;
 
                 if (Position { x, y }).distance(Position { x: it_x, y: it_y }) > 20_f32 {
                     dx *= -1.;

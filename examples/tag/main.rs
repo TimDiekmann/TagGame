@@ -51,6 +51,7 @@ fn main() -> Result<(), std::io::Error> {
                     x: rng.gen_range(0. ..config.board.width as f32),
                     y: rng.gen_range(0. ..config.board.height as f32),
                 },
+                properties: config.player_properties,
             },
         );
     }
