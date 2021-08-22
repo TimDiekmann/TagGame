@@ -8,6 +8,7 @@ mod world;
 use std::{
     fs::File,
     io::{stdin, BufReader, Write},
+    time::Instant,
 };
 
 use rand::Rng;
@@ -101,9 +102,14 @@ fn main() -> Result<(), std::io::Error> {
         match c? {
             Key::Char('q') | Key::Esc | Key::Ctrl('c' | 'd') => break,
             Key::Char('t') => {
+                let start = Instant::now();
                 check_tag(&mut simulation);
                 simulation.update();
+                let calc_time = start.elapsed();
+                let start = Instant::now();
                 viewer.draw_players(simulation.iter())?;
+                let draw_time = start.elapsed();
+                viewer.draw_time(calc_time, draw_time)?;
             }
             _ => {}
         }
