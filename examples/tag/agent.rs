@@ -121,16 +121,10 @@ impl Agent for TagAgent {
                 let Position { x: it_x, y: it_y } = population[&world.current_it].1.position;
                 let Position { x, y } = state.position;
 
-                let mut dx = if it_x < x && rng.gen_bool(0.6) {
-                    1.
-                } else {
-                    -1.
-                };
-                let mut dy = if it_y < y && rng.gen_bool(0.6) {
-                    1.
-                } else {
-                    -1.
-                };
+                let mut dx = if it_x < x { 1. } else { -1. };
+                let mut dy = if it_y < y { 1. } else { -1. };
+                dx *= if rng.gen_bool(0.7) { 1. } else { -1. };
+                dy *= if rng.gen_bool(0.7) { 1. } else { -1. };
 
                 if (Position { x, y }).distance(Position { x: it_x, y: it_y }) > 20_f32 {
                     dx *= -1.;
