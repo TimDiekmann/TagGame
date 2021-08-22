@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use rand::{thread_rng, Rng};
 use tag_game::Agent;
 
@@ -29,12 +31,12 @@ impl Agent for TagAgent {
     type State = AgentState;
     type World = World;
 
-    fn on_update<'sim>(
-        &'sim self,
+    fn on_update(
+        &self,
         id: u64,
-        state: &'sim mut Self::State,
-        world: &'sim Self::World,
-        _population: impl Iterator<Item = (u64, &'sim Self::State)>,
+        state: &mut Self::State,
+        world: &Self::World,
+        _population: &HashMap<u64, (Self, Self::State)>,
     ) {
         if world.current_it == id {
             state.tag = Tag::It;

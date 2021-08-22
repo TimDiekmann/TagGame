@@ -10,6 +10,7 @@ use crate::Agent;
 /// Please see the [crate documentation][crate] for examples.
 pub struct Simulation<A: Agent> {
     agents: HashMap<u64, (A, A::State)>,
+    state_buffer: HashMap<u64, (A, A::State)>,
     world: A::World,
     latest_id: u64,
 }
@@ -23,6 +24,7 @@ impl<A: Agent> Simulation<A> {
             world,
             agents: HashMap::new(),
             latest_id: 0,
+            state_buffer: HashMap::new(),
         }
     }
 
@@ -117,20 +119,13 @@ where
 {
     /// Calls [`Agent::on_update`] for every registered agent.
     pub fn update(&mut self) {
-        let agents_copy = self.agents.clone();
+        self.state_buffer.clone_from(&self.agents);
+        let state_buffer = &self.state_buffer;
         let world = &self.world;
         self.agents
             .par_iter_mut()
             .for_each(|(&id, (agent, state))| {
-                agent.on_update(
-                    id,
-                    state,
-                    world,
-                    agents_copy
-                        .iter()
-                        .filter(|(&ag_id, _)| ag_id != id)
-                        .map(|(&id, (_, s))| (id, s)),
-                );
+                agent.on_update(id, state, world, state_buffer);
             });
     }
 }
@@ -145,7 +140,10 @@ impl<A: Agent> Drop for Simulation<A> {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::{
+        collections::HashMap,
+        sync::atomic::{AtomicU64, Ordering},
+    };
 
     use crate::{Agent, Simulation};
 
@@ -225,13 +223,12 @@ mod tests {
 
         fn on_update<'sim>(
             &'sim self,
-            id: u64,
+            _id: u64,
             _state: &'sim mut Self::State,
             _world: &'sim Self::World,
-            mut population: impl Iterator<Item = (u64, &'sim Self::State)>,
+            _population: &HashMap<u64, (Self, Self::State)>,
         ) {
             self.on_update_count.fetch_add(1, Ordering::SeqCst);
-            assert!(!population.any(|(i, _)| i == id));
         }
     }
 

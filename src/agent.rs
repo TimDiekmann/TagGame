@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 /// The agent used in the simulation.
 ///
 /// This defines the behavior on creation, deletion or updates in the simulated environment.
@@ -25,12 +27,12 @@ pub trait Agent: Sized + Send + Sync {
 
     /// Called when the simulation is updated.
     #[allow(unused_variables)]
-    fn on_update<'sim>(
-        &'sim self,
+    fn on_update(
+        &self,
         id: u64,
-        state: &'sim mut Self::State,
-        world: &'sim Self::World,
-        population: impl Iterator<Item = (u64, &'sim Self::State)>,
+        state: &mut Self::State,
+        world: &Self::World,
+        population: &HashMap<u64, (Self, Self::State)>,
     ) {
     }
 }
