@@ -225,7 +225,7 @@ mod tests {
 
         fn on_update<'sim>(
             &'sim self,
-            _id: u64,
+            id: u64,
             _state: &'sim mut Self::State,
             _world: &'sim Self::World,
             mut population: impl Iterator<Item = (u64, &'sim Self::State)>,
