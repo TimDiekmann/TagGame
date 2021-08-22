@@ -1,20 +1,40 @@
 use std::{
     fs::{File, OpenOptions},
     io::{self, BufReader, BufWriter},
+    ops::Range,
 };
 
 use serde::{Deserialize, Serialize};
 
-use crate::Board;
+use crate::{agent::Properties, Board};
+
+/// Configuration for player properties and behaviors
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct AgentConfig {
+    pub untagged_deciding: Range<f64>,
+    pub tagged_deciding: Range<f64>,
+    pub untagged_speed_multiplied: Range<f32>,
+    pub tagged_speed_multiplied: Range<f32>,
+}
+
+impl Default for AgentConfig {
+    fn default() -> Self {
+        Self {
+            untagged_deciding: 0.5..0.8,
+            tagged_deciding: 0.7..0.9,
+            untagged_speed_multiplied: 0.8..1.0,
+            tagged_speed_multiplied: 0.9..1.1,
+        }
+    }
+}
 
 /// Configuration for the Tag game
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub board: Board,
-    #[serde(default = "Config::default_num_players")]
     pub num_players: u64,
-    #[serde(default = "Config::default_step")]
     pub step: u32,
+    pub agents: AgentConfig,
 }
 
 impl Default for Config {
@@ -23,6 +43,7 @@ impl Default for Config {
             board: Board::default(),
             num_players: 10,
             step: 1,
+            agents: AgentConfig::default(),
         }
     }
 }
@@ -36,18 +57,15 @@ impl Config {
         if let Ok(file) = File::open(&config_file_path) {
             Ok(serde_json::from_reader(BufReader::new(file))?)
         } else {
-            let writer = BufWriter::new(OpenOptions::new().write(true).open(config_file_path)?);
+            let writer = BufWriter::new(
+                OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .open(config_file_path)?,
+            );
             let config = Self::default();
             serde_json::to_writer_pretty(writer, &Self::default())?;
             Ok(config)
         }
-    }
-
-    fn default_num_players() -> u64 {
-        Self::default().num_players
-    }
-
-    fn default_step() -> u32 {
-        Self::default().step
     }
 }
