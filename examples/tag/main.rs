@@ -1,4 +1,4 @@
-//#![allow(unused)]
+#![allow(clippy::module_name_repetitions)]
 
 mod config;
 mod output;
@@ -45,7 +45,6 @@ impl Agent for TagAgent {
         }
         let mut rng = thread_rng();
 
-        let dx = rng.gen_range(0..=1);
         let dx = 1;
         if rng.gen_bool(0.5) && state.position[0] < world.board.width - 1 {
             state.position[0] += dx;
@@ -53,22 +52,12 @@ impl Agent for TagAgent {
             state.position[0] -= dx;
         }
 
-        let dy = rng.gen_range(0..=1);
         let dy = 1;
         if rng.gen_bool(0.5) && state.position[1] < world.board.height - 1 {
             state.position[1] += dy;
         } else if state.position[1] > 0 {
             state.position[1] -= dy;
         }
-        // state.position[0] = state.position[0].clamp(0, world.board.width);
-
-        // let dy = rng.gen_range(0..=1);
-        // if rng.gen_bool(0.5) {
-        //     state.position[1] += dy;
-        // } else {
-        //     state.position[1] -= dy;
-        // }
-        // state.position[1] = state.position[0].clamp(0, world.board.height);
     }
 }
 

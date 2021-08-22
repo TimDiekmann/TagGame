@@ -1,29 +1,19 @@
-use std::{
-    fmt::Display,
-    io::{stdin, stdout, Error, Stdin, Stdout, Write},
-    thread, time,
-};
+use std::io::{stdout, Error, Stdout, Write};
 
-use tag_game::Simulation;
 use termion::{
-    clear,
-    color::{self, Color},
+    clear, color,
     cursor::{self, HideCursor},
-    event::Key,
-    input::TermRead,
     raw::{IntoRawMode, RawTerminal},
-    screen::{AlternateScreen, ToAlternateScreen, ToMainScreen},
+    screen::AlternateScreen,
     terminal_size,
 };
 
 use crate::{
     state::{AgentState, Tag},
     world::Board,
-    TagAgent,
 };
 
 pub struct Output {
-    stdin: Stdin,
     screen: HideCursor<AlternateScreen<RawTerminal<Stdout>>>,
     board: Board,
     terminal_size: (u16, u16),
@@ -34,7 +24,6 @@ pub struct Output {
 impl Output {
     pub fn new(board: Board) -> Result<Self, Error> {
         let mut output = Self {
-            stdin: stdin(),
             screen: HideCursor::from(AlternateScreen::from(stdout().into_raw_mode()?)),
             board,
             terminal_size: terminal_size()?,
