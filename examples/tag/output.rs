@@ -1,4 +1,7 @@
-use std::io::{stdout, Error, Stdout, Write};
+use std::{
+    io::{stdout, Error, Stdout, Write},
+    time::Duration,
+};
 
 use termion::{
     clear, color,
@@ -47,6 +50,19 @@ impl Output {
 
     fn clear(&mut self) -> Result<(), Error> {
         write!(self.screen, "{}", clear::All)
+    }
+
+    pub fn draw_time(&mut self, calc_time: Duration, draw_time: Duration) -> Result<(), Error> {
+        let calc_time_ms = calc_time.as_millis().clamp(1, u128::MAX);
+        let draw_time_ms = draw_time.as_millis().clamp(1, u128::MAX);
+        write!(
+            self.screen,
+            "{}{}, tps: {:4} ups, fps: {:4} fps ",
+            color::Reset.fg_str(),
+            cursor::Goto(22, 1),
+            1000 / calc_time_ms,
+            1000 / draw_time_ms,
+        )
     }
 
     /// Draws the player onto the board]
@@ -102,11 +118,7 @@ impl Output {
         }
         self.draw(self.board.width + 1, self.board.height + 1, '╝', None)?;
 
-        write!(
-            self.screen,
-            "{}q: Quit, t: Update",
-            cursor::Goto(1, self.terminal_size.1 - 1)
-        )?;
+        write!(self.screen, "{} q: Quit, t: Update ", cursor::Goto(3, 1))?;
 
         self.screen.flush()?;
 
