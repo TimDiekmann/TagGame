@@ -10,7 +10,7 @@ categories = ["games"]
 publish = false
 
 [dependencies]
-rayon = "*"
+rayon = "1.5"
 
 
 [dev-dependencies]
