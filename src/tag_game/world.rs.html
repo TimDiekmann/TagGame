@@ -10,11 +10,11 @@
 <span id="10">10</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::Agent</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Agent</span>, <span class="ident">Id</span>};
 
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">World</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Agent</span><span class="op">&gt;</span> {
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">unused_variables</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">update</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">agents</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">u64</span>, (<span class="ident">A</span>, <span class="ident">A::State</span>)<span class="op">&gt;</span>) {}
+    <span class="kw">fn</span> <span class="ident">update</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">agents</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">Id</span>, (<span class="ident">A</span>, <span class="ident">A::State</span>)<span class="op">&gt;</span>) {}
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Agent</span><span class="op">&gt;</span> <span class="ident">World</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> () {}
