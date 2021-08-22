@@ -236,6 +236,24 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_update() {
+        let agent = &CountingAgent::default();
+        let mut simulation = Simulation::new(());
+        let agent_id = simulation.add_agent(agent, ());
+
+        assert_eq!(agent.on_update_count.load(Ordering::SeqCst), 0);
+        simulation.update();
+        assert_eq!(agent.on_update_count.load(Ordering::SeqCst), 1);
+
+        assert!(simulation.remove_agent(agent_id));
+
+        assert_eq!(agent.on_update_count.load(Ordering::SeqCst), 1);
+        simulation.update();
+        assert_eq!(agent.on_update_count.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
     fn test_callback() {
         let agent = &CountingAgent::default();
 
@@ -251,25 +269,13 @@ mod tests {
         assert_eq!(agent.on_creation_count.load(Ordering::Relaxed), 2);
         assert_eq!(agent.on_deletion_count.load(Ordering::Relaxed), 0);
 
-        assert_eq!(agent.on_update_count.load(Ordering::SeqCst), 0);
-        simulation.update();
-        assert_eq!(agent.on_update_count.load(Ordering::SeqCst), 2);
-
         assert!(simulation.remove_agent(agent_id_1));
         assert_eq!(agent.on_creation_count.load(Ordering::Relaxed), 2);
         assert_eq!(agent.on_deletion_count.load(Ordering::Relaxed), 1);
 
-        assert_eq!(agent.on_update_count.load(Ordering::SeqCst), 2);
-        simulation.update();
-        assert_eq!(agent.on_update_count.load(Ordering::SeqCst), 3);
-
         assert!(!simulation.remove_agent(agent_id_1));
         assert_eq!(agent.on_creation_count.load(Ordering::Relaxed), 2);
         assert_eq!(agent.on_deletion_count.load(Ordering::Relaxed), 1);
-
-        assert_eq!(agent.on_update_count.load(Ordering::SeqCst), 3);
-        simulation.update();
-        assert_eq!(agent.on_update_count.load(Ordering::SeqCst), 4);
 
         drop(simulation);
         assert_eq!(agent.on_creation_count.load(Ordering::Relaxed), 2);
