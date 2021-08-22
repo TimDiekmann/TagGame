@@ -279,9 +279,6 @@
 <span id="279">279</span>
 <span id="280">280</span>
 <span id="281">281</span>
-<span id="282">282</span>
-<span id="283">283</span>
-<span id="284">284</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::collections::hash_map</span>::{<span class="ident">Entry</span>, <span class="ident">HashMap</span>};
 
 <span class="kw">use</span> <span class="ident">rayon::prelude</span>::<span class="kw-2">*</span>;
@@ -294,6 +291,7 @@
 <span class="doccomment">/// Please see the [crate documentation][crate] for examples.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Simulation</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Agent</span><span class="op">&gt;</span> {
     <span class="ident">agents</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">u64</span>, (<span class="ident">A</span>, <span class="ident">A::State</span>)<span class="op">&gt;</span>,
+    <span class="ident">state_buffer</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">u64</span>, (<span class="ident">A</span>, <span class="ident">A::State</span>)<span class="op">&gt;</span>,
     <span class="ident">world</span>: <span class="ident">A::World</span>,
     <span class="ident">latest_id</span>: <span class="ident">u64</span>,
 }
@@ -307,6 +305,7 @@
             <span class="ident">world</span>,
             <span class="ident">agents</span>: <span class="ident">HashMap::new</span>(),
             <span class="ident">latest_id</span>: <span class="number">0</span>,
+            <span class="ident">state_buffer</span>: <span class="ident">HashMap::new</span>(),
         }
     }
 
@@ -401,20 +400,13 @@
 {
     <span class="doccomment">/// Calls [`Agent::on_update`] for every registered agent.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">update</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
-        <span class="kw">let</span> <span class="ident">agents_copy</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">agents</span>.<span class="ident">clone</span>();
+        <span class="self">self</span>.<span class="ident">state_buffer</span>.<span class="ident">clone_from</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">agents</span>);
+        <span class="kw">let</span> <span class="ident">state_buffer</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">state_buffer</span>;
         <span class="kw">let</span> <span class="ident">world</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">world</span>;
         <span class="self">self</span>.<span class="ident">agents</span>
             .<span class="ident">par_iter_mut</span>()
             .<span class="ident">for_each</span>(<span class="op">|</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>, (<span class="ident">agent</span>, <span class="ident">state</span>))<span class="op">|</span> {
-                <span class="ident">agent</span>.<span class="ident">on_update</span>(
-                    <span class="ident">id</span>,
-                    <span class="ident">state</span>,
-                    <span class="ident">world</span>,
-                    <span class="ident">agents_copy</span>
-                        .<span class="ident">iter</span>()
-                        .<span class="ident">filter</span>(<span class="op">|</span>(<span class="kw-2">&amp;</span><span class="ident">ag_id</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="ident">ag_id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">id</span>)
-                        .<span class="ident">map</span>(<span class="op">|</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>, (<span class="kw">_</span>, <span class="ident">s</span>))<span class="op">|</span> (<span class="ident">id</span>, <span class="ident">s</span>)),
-                );
+                <span class="ident">agent</span>.<span class="ident">on_update</span>(<span class="ident">id</span>, <span class="ident">state</span>, <span class="ident">world</span>, <span class="ident">state_buffer</span>);
             });
     }
 }
@@ -429,7 +421,10 @@
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
-    <span class="kw">use</span> <span class="ident">std::sync::atomic</span>::{<span class="ident">AtomicU64</span>, <span class="ident">Ordering</span>};
+    <span class="kw">use</span> <span class="ident">std</span>::{
+        <span class="ident">collections::HashMap</span>,
+        <span class="ident">sync::atomic</span>::{<span class="ident">AtomicU64</span>, <span class="ident">Ordering</span>},
+    };
 
     <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Agent</span>, <span class="ident">Simulation</span>};
 
@@ -509,13 +504,12 @@
 
         <span class="kw">fn</span> <span class="ident">on_update</span><span class="op">&lt;</span><span class="lifetime">&#39;sim</span><span class="op">&gt;</span>(
             <span class="kw-2">&amp;</span><span class="lifetime">&#39;sim</span> <span class="self">self</span>,
-            <span class="ident">id</span>: <span class="ident">u64</span>,
+            <span class="ident">_id</span>: <span class="ident">u64</span>,
             <span class="ident">_state</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;sim</span> <span class="kw-2">mut</span> <span class="ident"><span class="self">Self</span>::State</span>,
             <span class="ident">_world</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;sim</span> <span class="ident"><span class="self">Self</span>::World</span>,
-            <span class="kw-2">mut</span> <span class="ident">population</span>: <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (<span class="ident">u64</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;sim</span> <span class="ident"><span class="self">Self</span>::State</span>)<span class="op">&gt;</span>,
+            <span class="ident">_population</span>: <span class="kw-2">&amp;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">u64</span>, (<span class="self">Self</span>, <span class="ident"><span class="self">Self</span>::State</span>)<span class="op">&gt;</span>,
         ) {
             <span class="self">self</span>.<span class="ident">on_update_count</span>.<span class="ident">fetch_add</span>(<span class="number">1</span>, <span class="ident">Ordering::SeqCst</span>);
-            <span class="macro">assert!</span>(<span class="op">!</span><span class="ident">population</span>.<span class="ident">any</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="ident">i</span> <span class="op">=</span><span class="op">=</span> <span class="ident">id</span>));
         }
     }
 
