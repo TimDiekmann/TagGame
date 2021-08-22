@@ -23,8 +23,8 @@ pub struct Output {
     terminal_size: (u16, u16),
     drawn_positions: Vec<(u16, u16)>,
     scroll: (i32, i32),
-    last_ups: Vec<u16>,
-    last_fps: Vec<u16>,
+    last_ups: Vec<u32>,
+    last_fps: Vec<u32>,
     tick: u8,
 }
 
@@ -109,24 +109,35 @@ impl Output {
         print!("{}", clear::All);
     }
 
-    #[allow(clippy::similar_names, clippy::cast_possible_truncation)]
-    pub fn draw_time(&mut self, calc_time: Duration, draw_time: Duration) -> Result<(), Error> {
-        let ups = 1000 / calc_time.as_millis().clamp(1, u128::MAX);
-        let fps = 1000 / draw_time.as_millis().clamp(1, u128::MAX);
+    #[allow(
+        clippy::similar_names,
+        clippy::cast_possible_truncation,
+        clippy::cast_precision_loss,
+        clippy::cast_lossless,
+        clippy::cast_sign_loss
+    )]
+    pub fn draw_time(
+        &mut self,
+        calc_time: Duration,
+        draw_time: Duration,
+        step: u32,
+    ) -> Result<(), Error> {
+        let ups = 1_000_000_f64 / (calc_time.as_micros().clamp(1, u128::MAX) as f64 / step as f64);
+        let fps = 1_000_000 / draw_time.as_micros().clamp(1, u128::MAX);
 
-        self.last_ups[self.tick as usize % 10] = ups as u16;
-        self.last_fps[self.tick as usize % 10] = fps as u16;
+        self.last_ups[self.tick as usize % 10] = ups as u32;
+        self.last_fps[self.tick as usize % 10] = fps as u32;
         self.tick += 1;
 
-        let avg_ups = self.last_ups.iter().sum::<u16>() / 10;
-        let avg_fps = self.last_fps.iter().sum::<u16>() / 10;
+        let avg_ups = self.last_ups.iter().sum::<u32>() / 10;
+        let avg_fps = self.last_fps.iter().sum::<u32>() / 10;
         write!(
             self.screen,
             "{}{}tps: {:4} ups ({:4} on avg), fps: {:4} fps ({:4} on avg) {}",
             color::Reset.fg_str(),
             cursor::Goto(1, self.terminal_size.1),
-            ups,
-            avg_ups,
+            ups as u32,
+            avg_ups as u32,
             fps,
             avg_fps,
             cursor::Goto(39, 1),

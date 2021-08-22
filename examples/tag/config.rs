@@ -13,6 +13,8 @@ pub struct Config {
     pub board: Board,
     #[serde(default = "Config::default_num_players")]
     pub num_players: u64,
+    #[serde(default = "Config::default_step")]
+    pub step: u32,
 }
 
 impl Default for Config {
@@ -20,6 +22,7 @@ impl Default for Config {
         Self {
             board: Board::default(),
             num_players: 10,
+            step: 1,
         }
     }
 }
@@ -40,5 +43,9 @@ impl Config {
 
     fn default_num_players() -> u64 {
         Self::default().num_players
+    }
+
+    fn default_step() -> u32 {
+        Self::default().step
     }
 }

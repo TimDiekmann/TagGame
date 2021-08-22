@@ -3,5 +3,6 @@
         "width": 50,
         "height": 50
     },
-    "num_players": 10
+    "num_players": 10,
+    "step": 1
 }

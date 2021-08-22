@@ -101,14 +101,16 @@ fn main() -> Result<(), std::io::Error> {
             Key::Char('q') | Key::Esc | Key::Ctrl('c' | 'd') => break,
             Key::Char('t') => {
                 let start = Instant::now();
-                check_tag(&mut simulation);
-                simulation.update();
+                for _ in 0..config.step {
+                    check_tag(&mut simulation);
+                    simulation.update();
+                }
                 let calc_time = start.elapsed();
                 let start = Instant::now();
                 viewer.draw_players(simulation.iter());
                 let draw_time = start.elapsed();
                 stdout().flush()?;
-                viewer.draw_time(calc_time, draw_time)?;
+                viewer.draw_time(calc_time, draw_time, config.step)?;
             }
             Key::Left | Key::Char('h') => viewer.scroll_left(simulation.iter()),
             Key::Down | Key::Char('j') => viewer.scroll_down(simulation.iter()),
