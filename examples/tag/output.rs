@@ -9,7 +9,7 @@ use termion::{
 };
 
 use crate::{
-    state::{AgentState, Tag},
+    agent::{AgentState, Tag},
     world::Board,
 };
 
@@ -18,7 +18,6 @@ pub struct Output {
     board: Board,
     terminal_size: (u16, u16),
     drawn_pixels: Vec<(u16, u16)>,
-    // scale: f32,
 }
 
 impl Output {
@@ -50,6 +49,7 @@ impl Output {
         write!(self.screen, "{}", clear::All)
     }
 
+    /// Draws the player onto the board]
     pub fn draw_players<'sim>(
         &mut self,
         states: impl Iterator<Item = (u64, &'sim AgentState)>,
@@ -107,6 +107,8 @@ impl Output {
             "{}q: Quit, t: Update",
             cursor::Goto(1, self.terminal_size.1 - 1)
         )?;
+
+        self.screen.flush()?;
 
         Ok(())
     }

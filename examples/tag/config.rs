@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::Board;
 
+/// Configuration for the Tag game
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub board: Board,

@@ -1,65 +1,26 @@
 #![allow(clippy::module_name_repetitions)]
 
+mod agent;
 mod config;
 mod output;
-mod state;
 mod world;
 
-use rand::{thread_rng, Rng};
 use std::{
     fs::File,
     io::{stdin, BufReader, Write},
 };
-use tag_game::{Agent, Simulation};
+
+use rand::Rng;
 use termion::{event::Key, input::TermRead};
 
-use config::Config;
-use state::{AgentState, Tag};
-use world::Board;
+use tag_game::Simulation;
 
-use crate::{output::Output, world::World};
-
-/// Prints to the console as soon as an event occurs.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-struct TagAgent;
-
-impl Agent for TagAgent {
-    type State = AgentState;
-    type World = World;
-
-    fn on_update<'sim>(
-        &'sim self,
-        id: u64,
-        state: &'sim mut Self::State,
-        world: &'sim Self::World,
-        _population: impl Iterator<Item = (u64, &'sim Self::State)>,
-    ) {
-        if world.current_it == id {
-            state.tag = Tag::It;
-        } else if let Some(recent_it) = world.recent_it {
-            if recent_it == id {
-                state.tag = Tag::Recent;
-            } else {
-                state.tag = Tag::None;
-            }
-        }
-        let mut rng = thread_rng();
-
-        let dx = 1;
-        if rng.gen_bool(0.5) && state.position[0] < world.board.width - 1 {
-            state.position[0] += dx;
-        } else if state.position[0] > 0 {
-            state.position[0] -= dx;
-        }
-
-        let dy = 1;
-        if rng.gen_bool(0.5) && state.position[1] < world.board.height - 1 {
-            state.position[1] += dy;
-        } else if state.position[1] > 0 {
-            state.position[1] -= dy;
-        }
-    }
-}
+use crate::{
+    agent::{AgentState, Tag, TagAgent},
+    config::Config,
+    output::Output,
+    world::{Board, World},
+};
 
 fn distance(p: [u16; 2], q: [u16; 2]) -> f32 {
     let p1 = f32::from(p[0]);
@@ -106,15 +67,19 @@ fn main() -> Result<(), std::io::Error> {
     // Initialize random generator
     let mut rng = rand::thread_rng();
 
+    // Initialize world
     let world = World {
         board: config.board,
         current_it: rng.gen_range(0..config.num_players),
         recent_it: None,
-        rng: rng.clone(),
     };
 
+    // create the simulation with the created world
     let mut simulation = Simulation::new(world);
 
+    // create the agents
+    // the world already has the information, which agent is "It" at startup
+    // The agent will update the state as soon as the simulation begins
     for _ in 0..config.num_players {
         let position = [
             rng.gen_range(0..config.board.width),
@@ -131,8 +96,6 @@ fn main() -> Result<(), std::io::Error> {
     }
 
     let mut viewer = Output::new(config.board)?;
-
-    viewer.screen().flush()?;
 
     for c in stdin().keys() {
         match c? {
