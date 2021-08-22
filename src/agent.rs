@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::World;
+
 /// The agent used in the simulation.
 ///
 /// This defines the behavior on creation, deletion or updates in the simulated environment.
@@ -15,7 +17,7 @@ pub trait Agent: Sized + Send + Sync {
     /// The state associated with the agent
     type State: Send + Sync;
     /// The state of the world, provided by the simulation
-    type World: Sync;
+    type World: World<Self> + Sync;
 
     /// Called when an agent is added to the simulation.
     #[allow(unused_variables)]

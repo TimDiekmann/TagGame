@@ -2,7 +2,7 @@ use std::collections::hash_map::{Entry, HashMap};
 
 use rayon::prelude::*;
 
-use crate::Agent;
+use crate::{Agent, World};
 
 /// Adds and removes [`Agent`]s, and updates the them
 /// based on their defined behavior.
@@ -127,6 +127,7 @@ where
             .for_each(|(&id, (agent, state))| {
                 agent.on_update(id, state, world, state_buffer);
             });
+        self.world.update(&mut self.agents);
     }
 }
 
@@ -145,17 +146,21 @@ mod tests {
         sync::atomic::{AtomicU64, Ordering},
     };
 
-    use crate::{Agent, Simulation};
+    use crate::{Agent, Simulation, World};
+
+    #[derive(Debug, PartialEq, Eq)]
+    struct SimpleWorld(&'static str);
 
     struct SimpleAgent;
+    impl World<SimpleAgent> for SimpleWorld {}
     impl Agent for SimpleAgent {
         type State = u32;
-        type World = ();
+        type World = SimpleWorld;
     }
 
     #[test]
     fn test_access() {
-        let mut simulation = Simulation::new(());
+        let mut simulation = Simulation::new(SimpleWorld("world"));
 
         let agent_id = simulation.add_agent(SimpleAgent, 42);
         assert!(simulation.has_agent(agent_id));
@@ -168,24 +173,17 @@ mod tests {
 
     #[test]
     fn test_world() {
-        struct WorldTestAgent;
+        let mut simulation = Simulation::<SimpleAgent>::new(SimpleWorld("world"));
 
-        impl Agent for WorldTestAgent {
-            type State = ();
-            type World = &'static str;
-        }
+        assert_eq!(*simulation.world(), SimpleWorld("world"));
 
-        let mut simulation = Simulation::<WorldTestAgent>::new("world");
-
-        assert_eq!(*simulation.world(), "world");
-
-        *simulation.world_mut() = "hello";
-        assert_eq!(*simulation.world(), "hello");
+        simulation.world_mut().0 = "hello";
+        assert_eq!(*simulation.world(), SimpleWorld("hello"));
     }
 
     #[test]
     fn test_iteration() {
-        let mut simulation = Simulation::new(());
+        let mut simulation = Simulation::new(SimpleWorld("world"));
 
         let agent_ids = (1..=4)
             .map(|i| simulation.add_agent(SimpleAgent, i))
@@ -208,7 +206,6 @@ mod tests {
         on_deletion_count: AtomicU64,
         on_update_count: AtomicU64,
     }
-
     impl Agent for &CountingAgent {
         type State = ();
         type World = ();

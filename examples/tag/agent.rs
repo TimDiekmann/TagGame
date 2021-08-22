@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use rand::{thread_rng, Rng};
 use tag_game::Agent;
 
-use crate::world::World;
+use crate::world::TagWorld;
 
 /// The state, if an agent is tagged.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -29,7 +29,7 @@ pub struct TagAgent;
 
 impl Agent for TagAgent {
     type State = AgentState;
-    type World = World;
+    type World = TagWorld;
 
     fn on_update(
         &self,
