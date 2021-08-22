@@ -162,6 +162,9 @@ impl Output {
         }
         self.draw(self.board.width, self.board.height, '╝', None);
 
-        print!("{} q: Quit, t: Update, h/j/k/l: Scroll ", cursor::Goto(3, 1));
+        print!(
+            "{} q: Quit, t: Update, h/j/k/l: Scroll ",
+            cursor::Goto(3, 1)
+        );
     }
 }
