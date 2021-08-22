@@ -58,12 +58,7 @@ fn check_tag(simulation: &mut Simulation<TagAgent>) {
 }
 
 fn main() -> Result<(), std::io::Error> {
-    let config_file_path = std::env::current_dir()?
-        .join("examples")
-        .join("tag")
-        .join("config.json");
-    let config_file = BufReader::new(File::open(config_file_path)?);
-    let config: Config = serde_json::from_reader(config_file)?;
+    let config = Config::load()?;
 
     // Initialize random generator
     let mut rng = rand::thread_rng();

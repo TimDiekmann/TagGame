@@ -1,3 +1,8 @@
+use std::{
+    fs::{self, File},
+    io::{self, BufReader, BufWriter, Write},
+};
+
 use serde::{Deserialize, Serialize};
 
 use crate::Board;
@@ -20,6 +25,19 @@ impl Default for Config {
 }
 
 impl Config {
+    pub fn load() -> Result<Self, io::Error> {
+        let example_dir = std::env::current_dir()?.join("examples").join("tag");
+        let config_file_path = example_dir.join("config.json");
+        let config_file = if let Ok(file) = File::open(&config_file_path) {
+            BufReader::new(file)
+        } else {
+            let template_path = example_dir.join("config.template.json");
+            fs::copy(template_path, &config_file_path)?;
+            BufReader::new(File::open(config_file_path)?)
+        };
+        Ok(serde_json::from_reader(config_file)?)
+    }
+
     fn default_num_players() -> u64 {
         Self::default().num_players
     }
