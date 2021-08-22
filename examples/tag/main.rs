@@ -19,42 +19,8 @@ use crate::{
     agent::{AgentState, Tag, TagAgent},
     config::Config,
     output::Output,
-    world::{Board, World},
+    world::{Board, TagWorld},
 };
-
-fn distance(p: [u16; 2], q: [u16; 2]) -> f32 {
-    let p1 = f32::from(p[0]);
-    let p2 = f32::from(p[1]);
-    let q1 = f32::from(q[0]);
-    let q2 = f32::from(q[1]);
-    (q1 - p1).hypot(q2 - p2)
-}
-
-fn check_tag(simulation: &mut Simulation<TagAgent>) {
-    let current_it_id = simulation.world().current_it;
-    let mut next_id = None;
-    if let Some(current_it) = simulation.agent(current_it_id) {
-        for (id, agent) in simulation.iter() {
-            if id == current_it_id {
-                // One can't tag themself
-                continue;
-            }
-            if agent.tag == Tag::Recent {
-                // No retag
-                continue;
-            }
-            if distance(current_it.position, agent.position) < 3_f32 {
-                next_id.replace(id);
-                break;
-            }
-        }
-    }
-    if let Some(next_id) = next_id {
-        let world = simulation.world_mut();
-        world.recent_it = Some(current_it_id);
-        world.current_it = next_id;
-    }
-}
 
 fn main() -> Result<(), std::io::Error> {
     let config = Config::load()?;
@@ -63,7 +29,7 @@ fn main() -> Result<(), std::io::Error> {
     let mut rng = rand::thread_rng();
 
     // Initialize world
-    let world = World {
+    let world = TagWorld {
         board: config.board,
         current_it: rng.gen_range(0..config.num_players),
         recent_it: None,
@@ -90,8 +56,8 @@ fn main() -> Result<(), std::io::Error> {
         );
     }
 
+    // create the viewer to spectate the game
     let mut viewer = Output::new(config.board)?;
-    check_tag(&mut simulation);
     simulation.update();
     viewer.draw_players(simulation.iter());
     stdout().flush()?;
@@ -102,7 +68,6 @@ fn main() -> Result<(), std::io::Error> {
             Key::Char('t') => {
                 let start = Instant::now();
                 for _ in 0..config.step {
-                    check_tag(&mut simulation);
                     simulation.update();
                 }
                 let calc_time = start.elapsed();
