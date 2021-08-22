@@ -57,7 +57,7 @@ jobs:
               --ignore='/**' \
               --ignore='C:/**' \
               --ignore='../**' \
-              --ignore='examples/**'
+              --ignore='examples/**' \
               --ignore-not-existing \
               --excl-line "^#" \
               --excl-br-line "^#" \
