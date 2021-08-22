@@ -14,7 +14,7 @@ use agent::{Position, Properties};
 use rand::Rng;
 use termion::{event::Key, input::TermRead};
 
-use tag_game::Simulation;
+use tag_game::{Id, Simulation};
 
 use crate::{
     agent::{AgentState, Tag, TagAgent},
@@ -32,7 +32,7 @@ fn main() -> Result<(), std::io::Error> {
     // Initialize world
     let world = TagWorld {
         board: config.board,
-        current_it: rng.gen_range(0..config.num_players),
+        current_it: Id(rng.gen_range(0..config.num_players)),
         recent_it: None,
     };
 
@@ -94,7 +94,7 @@ fn main() -> Result<(), std::io::Error> {
         if let Some(current_it) = simulation.agent(current_it_id) {
             print!(
                 " - current \"It\": {} at position ({},{})    ",
-                current_it_id,
+                current_it_id.0,
                 current_it.position.x + 1.,
                 current_it.position.y + 1.
             );

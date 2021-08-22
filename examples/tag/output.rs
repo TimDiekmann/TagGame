@@ -4,6 +4,7 @@ use std::{
     time::Duration,
 };
 
+use tag_game::Id;
 use termion::{
     clear, color,
     cursor::{self, HideCursor},
@@ -60,7 +61,7 @@ impl Output {
         Ok(output)
     }
 
-    fn after_scrolling<'sim>(&mut self, states: impl Iterator<Item = (u64, &'sim AgentState)>) {
+    fn after_scrolling<'sim>(&mut self, states: impl Iterator<Item = (Id, &'sim AgentState)>) {
         self.drawn_positions.clear();
         Self::clear();
         self.draw_borders();
@@ -68,22 +69,22 @@ impl Output {
         print!("{}{}", color::Reset.fg_str(), cursor::Goto(39, 1));
     }
 
-    pub fn scroll_up<'sim>(&mut self, states: impl Iterator<Item = (u64, &'sim AgentState)>) {
+    pub fn scroll_up<'sim>(&mut self, states: impl Iterator<Item = (Id, &'sim AgentState)>) {
         self.scroll.1 = self.scroll.1.saturating_add(1);
         self.after_scrolling(states);
     }
 
-    pub fn scroll_down<'sim>(&mut self, states: impl Iterator<Item = (u64, &'sim AgentState)>) {
+    pub fn scroll_down<'sim>(&mut self, states: impl Iterator<Item = (Id, &'sim AgentState)>) {
         self.scroll.1 = self.scroll.1.saturating_sub(1);
         self.after_scrolling(states);
     }
 
-    pub fn scroll_left<'sim>(&mut self, states: impl Iterator<Item = (u64, &'sim AgentState)>) {
+    pub fn scroll_left<'sim>(&mut self, states: impl Iterator<Item = (Id, &'sim AgentState)>) {
         self.scroll.0 = self.scroll.0.saturating_add(1);
         self.after_scrolling(states);
     }
 
-    pub fn scroll_right<'sim>(&mut self, states: impl Iterator<Item = (u64, &'sim AgentState)>) {
+    pub fn scroll_right<'sim>(&mut self, states: impl Iterator<Item = (Id, &'sim AgentState)>) {
         self.scroll.0 = self.scroll.0.saturating_sub(1);
         self.after_scrolling(states);
     }
@@ -153,7 +154,7 @@ impl Output {
     }
 
     /// Draws the player onto the board
-    pub fn draw_players<'sim>(&mut self, states: impl Iterator<Item = (u64, &'sim AgentState)>) {
+    pub fn draw_players<'sim>(&mut self, states: impl Iterator<Item = (Id, &'sim AgentState)>) {
         for Pixel { x, y } in &self.drawn_positions {
             print!("{} ", cursor::Goto(*x, *y));
         }

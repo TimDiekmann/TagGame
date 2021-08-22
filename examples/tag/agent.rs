@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
-use tag_game::Agent;
+use tag_game::{Agent, Id};
 
 use crate::world::{Board, TagWorld};
 
@@ -12,7 +12,7 @@ use crate::world::{Board, TagWorld};
 pub enum Tag {
     /// The agent is currently "It". If the id is set, "It" has tagged
     /// a new agent, which will become "It" next tick.
-    It(Option<u64>),
+    It(Option<Id>),
     /// The agent recently was "It".
     Recent,
     /// The agent can be tagged by "It".
@@ -70,10 +70,10 @@ impl Agent for TagAgent {
     )]
     fn on_update(
         &self,
-        id: u64,
+        id: Id,
         state: &mut Self::State,
         world: &Self::World,
-        population: &HashMap<u64, (Self, Self::State)>,
+        population: &HashMap<Id, (Self, Self::State)>,
     ) {
         fn run(state: &mut AgentState, board: Board, dx: f32, dy: f32) {
             state.position.x = (state.position.x + dx).clamp(0., board.width as f32 - 1.);
