@@ -10,7 +10,7 @@ use std::{
     time::Instant,
 };
 
-use agent::Position;
+use agent::{Position, Properties};
 use rand::Rng;
 use termion::{event::Key, input::TermRead};
 
@@ -51,7 +51,14 @@ fn main() -> Result<(), std::io::Error> {
                     x: rng.gen_range(0. ..config.board.width as f32),
                     y: rng.gen_range(0. ..config.board.height as f32),
                 },
-                properties: config.player_properties,
+                properties: Properties {
+                    untagged_deciding: rng.gen_range(config.agents.untagged_deciding.clone()),
+                    tagged_deciding: rng.gen_range(config.agents.tagged_deciding.clone()),
+                    untagged_speed_multiplied: rng
+                        .gen_range(config.agents.untagged_speed_multiplied.clone()),
+                    tagged_speed_multiplied: rng
+                        .gen_range(config.agents.tagged_speed_multiplied.clone()),
+                },
             },
         );
     }

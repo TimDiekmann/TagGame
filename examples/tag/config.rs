@@ -1,11 +1,32 @@
 use std::{
     fs::{File, OpenOptions},
     io::{self, BufReader, BufWriter},
+    ops::Range,
 };
 
 use serde::{Deserialize, Serialize};
 
 use crate::{agent::Properties, Board};
+
+/// Configuration for player properties and behaviors
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct AgentConfig {
+    pub untagged_deciding: Range<f64>,
+    pub tagged_deciding: Range<f64>,
+    pub untagged_speed_multiplied: Range<f32>,
+    pub tagged_speed_multiplied: Range<f32>,
+}
+
+impl Default for AgentConfig {
+    fn default() -> Self {
+        Self {
+            untagged_deciding: 0.5..0.8,
+            tagged_deciding: 0.7..0.9,
+            untagged_speed_multiplied: 0.8..1.0,
+            tagged_speed_multiplied: 0.9..1.1,
+        }
+    }
+}
 
 /// Configuration for the Tag game
 #[derive(Debug, Serialize, Deserialize)]
@@ -13,7 +34,7 @@ pub struct Config {
     pub board: Board,
     pub num_players: u64,
     pub step: u32,
-    pub player_properties: Properties,
+    pub agents: AgentConfig,
 }
 
 impl Default for Config {
@@ -22,7 +43,7 @@ impl Default for Config {
             board: Board::default(),
             num_players: 10,
             step: 1,
-            player_properties: Properties::default(),
+            agents: AgentConfig::default(),
         }
     }
 }

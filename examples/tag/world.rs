@@ -37,8 +37,8 @@ impl World<TagAgent> for TagWorld {
     fn update(&mut self, agents: &mut HashMap<u64, (TagAgent, AgentState)>) {
         let current_it_id = self.current_it;
         let mut next_id = None;
-        if let Some((_, current_it)) = agents.get(&current_it_id).copied() {
-            for (&id, &mut (_, state)) in agents {
+        if let Some((_, current_it)) = agents.get(&current_it_id).cloned() {
+            for (&id, &mut (_, ref state)) in agents {
                 if id == current_it_id {
                     // One can't tag themself
                     continue;

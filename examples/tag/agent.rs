@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Range};
 
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
@@ -37,7 +37,7 @@ impl Position {
 }
 
 /// Configuration for player properties and behaviors
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Properties {
     pub untagged_deciding: f64,
     pub tagged_deciding: f64,
@@ -45,19 +45,8 @@ pub struct Properties {
     pub tagged_speed_multiplied: f32,
 }
 
-impl Default for Properties {
-    fn default() -> Self {
-        Self {
-            untagged_deciding: 0.6,
-            tagged_deciding: 0.9,
-            untagged_speed_multiplied: 0.9,
-            tagged_speed_multiplied: 1.1,
-        }
-    }
-}
-
 /// The current State an agent.
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct AgentState {
     pub tag: Tag,
     pub position: Position,
