@@ -35,27 +35,10 @@ pub struct TagWorld {
 
 impl World<TagAgent> for TagWorld {
     fn update(&mut self, agents: &mut HashMap<u64, (TagAgent, AgentState)>) {
-        let current_it_id = self.current_it;
-        let mut next_id = None;
-        if let Some((_, current_it)) = agents.get(&current_it_id).cloned() {
-            for (&id, &mut (_, ref state)) in agents {
-                if id == current_it_id {
-                    // One can't tag themself
-                    continue;
-                }
-                if state.tag == Tag::Recent {
-                    // No retag
-                    continue;
-                }
-                if current_it.position.distance(state.position) < 3_f32 {
-                    next_id.replace(id);
-                    break;
-                }
-            }
-        }
-        if let Some(next_id) = next_id {
-            self.recent_it = Some(current_it_id);
-            self.current_it = next_id;
+        // Check, if the current "It" has tagged someone in the latest tick
+        if let Tag::It(Some(next)) = agents[&self.current_it].1.tag {
+            self.recent_it = Some(self.current_it);
+            self.current_it = next;
         }
     }
 }

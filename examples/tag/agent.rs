@@ -1,4 +1,4 @@
-use std::{collections::HashMap, ops::Range};
+use std::collections::HashMap;
 
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
@@ -10,11 +10,12 @@ use crate::world::{Board, TagWorld};
 /// The state, if an agent is tagged.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Tag {
-    /// The agent is currently "It"
-    It,
-    /// The agent recently was "It"
+    /// The agent is currently "It". If the id is set, "It" has tagged
+    /// a new agent, which will become "It" next tick.
+    It(Option<u64>),
+    /// The agent recently was "It".
     Recent,
-    /// The agent can be tagged by "It"
+    /// The agent can be tagged by "It".
     None,
 }
 
@@ -31,8 +32,9 @@ impl Position {
             y: y.into(),
         }
     }
-    pub fn distance(self, rhs: Self) -> f32 {
-        (self.x - rhs.x).hypot(self.y - rhs.y)
+
+    pub fn distance_squared(self, rhs: Self) -> f32 {
+        (self.x - rhs.x).mul_add(self.x - rhs.x, (self.y - rhs.y) * (self.y - rhs.y))
     }
 }
 
@@ -79,7 +81,7 @@ impl Agent for TagAgent {
         }
 
         if world.current_it == id {
-            state.tag = Tag::It;
+            state.tag = Tag::It(None);
         } else if let Some(recent_it) = world.recent_it {
             if recent_it == id {
                 state.tag = Tag::Recent;
@@ -90,22 +92,31 @@ impl Agent for TagAgent {
 
         let mut rng = thread_rng();
 
-        match state.tag {
+        match &mut state.tag {
             // Search an agent to tag
-            Tag::It => {
+            Tag::It(next) => {
                 let mut nearest = (id, f32::MAX);
                 // Find the nearest agent
                 for (&ag_id, (_, agent)) in population {
-                    if id == ag_id || agent.tag == Tag::Recent {
+                    if id == ag_id {
                         continue;
                     }
-                    let d = state
-                        .position
-                        .distance(population[&world.current_it].1.position);
+                    if let Some(recent_it) = world.recent_it {
+                        if ag_id == recent_it {
+                            continue;
+                        }
+                    }
+                    let d = state.position.distance_squared(agent.position);
                     if d < nearest.1 {
                         nearest = (ag_id, d);
                     }
                 }
+
+                if nearest.0 != id && nearest.1 < 3. {
+                    next.replace(nearest.0);
+                    return;
+                }
+
                 let Position { x: ag_x, y: ag_y } = population[&nearest.0].1.position;
                 let Position { x, y } = state.position;
 
@@ -148,7 +159,7 @@ impl Agent for TagAgent {
                     -1.
                 } * state.properties.untagged_speed_multiplied;
 
-                if (Position { x, y }).distance(Position { x: it_x, y: it_y }) > 20_f32 {
+                if (Position { x, y }).distance_squared(Position { x: it_x, y: it_y }) > 400_f32 {
                     dx *= -1.;
                     dy *= -1.;
                 }

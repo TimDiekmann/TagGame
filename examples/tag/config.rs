@@ -6,7 +6,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{agent::Properties, Board};
+use crate::Board;
 
 /// Configuration for player properties and behaviors
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]

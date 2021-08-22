@@ -162,7 +162,7 @@ impl Output {
             if let Some(px) = self.position_to_pixel(state.position) {
                 self.drawn_positions.push(px);
                 match state.tag {
-                    Tag::It => print!("{}{}@", cursor::Goto(px.x, px.y), color::Red.fg_str()),
+                    Tag::It(_) => print!("{}{}@", cursor::Goto(px.x, px.y), color::Red.fg_str()),
                     Tag::Recent => {
                         print!("{}{}%", cursor::Goto(px.x, px.y), color::Yellow.fg_str());
                     }
