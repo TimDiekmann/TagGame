@@ -13,16 +13,31 @@ use termion::{
 };
 
 use crate::{
-    agent::{AgentState, Tag},
+    agent::{AgentState, Position, Tag},
     world::Board,
 };
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Pixel {
+    pub x: u16,
+    pub y: u16,
+}
+
+impl Pixel {
+    pub fn new(x: impl Into<u16>, y: impl Into<u16>) -> Self {
+        Self {
+            x: x.into(),
+            y: y.into(),
+        }
+    }
+}
 
 pub struct Output {
     screen: HideCursor<AlternateScreen<RawTerminal<Stdout>>>,
     board: Board,
     terminal_size: (u16, u16),
-    drawn_positions: Vec<(u16, u16)>,
-    scroll: (i32, i32),
+    drawn_positions: Vec<Pixel>,
+    scroll: (i16, i16),
     last_ups: Vec<u32>,
     last_fps: Vec<u32>,
     tick: u8,
@@ -54,28 +69,28 @@ impl Output {
     }
 
     pub fn scroll_up<'sim>(&mut self, states: impl Iterator<Item = (u64, &'sim AgentState)>) {
-        self.scroll.1 += 1;
+        self.scroll.1 = self.scroll.1.saturating_add(1);
         self.after_scrolling(states);
     }
 
     pub fn scroll_down<'sim>(&mut self, states: impl Iterator<Item = (u64, &'sim AgentState)>) {
-        self.scroll.1 -= 1;
+        self.scroll.1 = self.scroll.1.saturating_sub(1);
         self.after_scrolling(states);
     }
 
     pub fn scroll_left<'sim>(&mut self, states: impl Iterator<Item = (u64, &'sim AgentState)>) {
-        self.scroll.0 += 1;
+        self.scroll.0 = self.scroll.0.saturating_add(1);
         self.after_scrolling(states);
     }
 
     pub fn scroll_right<'sim>(&mut self, states: impl Iterator<Item = (u64, &'sim AgentState)>) {
-        self.scroll.0 -= 1;
+        self.scroll.0 = self.scroll.0.saturating_sub(1);
         self.after_scrolling(states);
     }
 
-    fn position_to_pixel(&self, x: f32, y: f32) -> Option<(u16, u16)> {
-        let x = x + self.scroll.0 as f32 + 1.;
-        let y = y + self.scroll.1 as f32 + 1.;
+    fn position_to_pixel(&self, p: Position) -> Option<Pixel> {
+        let x = p.x + self.scroll.0 as f32 + 1.;
+        let y = p.y + self.scroll.1 as f32 + 1.;
         if x > 0.
             && x < self.terminal_size.0 as f32
             && y > 0.
@@ -83,14 +98,14 @@ impl Output {
         {
             // `x` and `y` are guaranteed to be greater than 0 and smaller than the terminal size, which is u16
             #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-            Some((x as u16, y as u16))
+            Some(Pixel::new(x as u16, y as u16))
         } else {
             None
         }
     }
 
-    fn draw(&mut self, x: f32, y: f32, ch: char, color: Option<&'static str>) {
-        if let Some((x, y)) = self.position_to_pixel(x, y) {
+    fn draw(&mut self, position: Position, ch: char, color: Option<&'static str>) {
+        if let Some(Pixel { x, y }) = self.position_to_pixel(position) {
             if let Some(color) = color {
                 print!("{}{}{}", cursor::Goto(x, y), color, ch);
             } else {
@@ -104,11 +119,10 @@ impl Output {
     }
 
     #[allow(
-        clippy::similar_names,
         clippy::cast_possible_truncation,
         clippy::cast_precision_loss,
-        clippy::cast_lossless,
-        clippy::cast_sign_loss
+        clippy::cast_sign_loss,
+        clippy::similar_names
     )]
     pub fn draw_time(
         &mut self,
@@ -140,21 +154,19 @@ impl Output {
 
     /// Draws the player onto the board
     pub fn draw_players<'sim>(&mut self, states: impl Iterator<Item = (u64, &'sim AgentState)>) {
-        for (x, y) in &self.drawn_positions {
-            // if let Some((x, y)) = self.position_to_pixel(*x, *y) {
+        for Pixel { x, y } in &self.drawn_positions {
             print!("{} ", cursor::Goto(*x, *y));
-            // }
         }
         self.drawn_positions.clear();
         for (_id, state) in states {
-            let x_pos = state.position[0];
-            let y_pos = state.position[1];
-            if let Some((x, y)) = self.position_to_pixel(x_pos, y_pos) {
-                self.drawn_positions.push((x, y));
+            if let Some(px) = self.position_to_pixel(state.position) {
+                self.drawn_positions.push(px);
                 match state.tag {
-                    Tag::It => print!("{}{}@", cursor::Goto(x, y), color::Red.fg_str()),
-                    Tag::Recent => print!("{}{}%", cursor::Goto(x, y), color::Yellow.fg_str()),
-                    Tag::None => print!("{}{}#", cursor::Goto(x, y), color::Green.fg_str()),
+                    Tag::It => print!("{}{}@", cursor::Goto(px.x, px.y), color::Red.fg_str()),
+                    Tag::Recent => {
+                        print!("{}{}%", cursor::Goto(px.x, px.y), color::Yellow.fg_str());
+                    }
+                    Tag::None => print!("{}{}#", cursor::Goto(px.x, px.y), color::Green.fg_str()),
                 }
             }
         }
@@ -163,19 +175,23 @@ impl Output {
     /// Draws the borders of the ... board
     pub fn draw_borders(&mut self) {
         print!("{}", color::Reset.fg_str());
-        self.draw(-1., -1., '╔', None);
+        self.draw(Position::new(-1., -1.), '╔', None);
         for w in 0..self.board.width {
-            self.draw(w as f32, -1., '═', None);
-            self.draw(w as f32, self.board.height as f32, '═', None);
+            self.draw(Position::new(w, -1.), '═', None);
+            self.draw(Position::new(w, self.board.height), '═', None);
         }
-        self.draw(self.board.width as f32, -1., '╗', None);
+        self.draw(Position::new(self.board.width, -1.), '╗', None);
 
-        self.draw(-1., self.board.height as f32, '╚', None);
+        self.draw(Position::new(-1., self.board.height), '╚', None);
         for h in 0..self.board.height {
-            self.draw(-1., h as f32, '║', None);
-            self.draw(self.board.width as f32, h as f32, '║', None);
+            self.draw(Position::new(-1., h), '║', None);
+            self.draw(Position::new(self.board.width, h), '║', None);
         }
-        self.draw(self.board.width as f32, self.board.height as f32, '╝', None);
+        self.draw(
+            Position::new(self.board.width, self.board.height),
+            '╝',
+            None,
+        );
 
         print!(
             "{} q: Quit, t: Update, h/j/k/l: Scroll ",

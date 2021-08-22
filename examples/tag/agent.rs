@@ -16,11 +16,29 @@ pub enum Tag {
     None,
 }
 
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Position {
+    pub x: f32,
+    pub y: f32,
+}
+
+impl Position {
+    pub fn new(x: impl Into<f32>, y: impl Into<f32>) -> Self {
+        Self {
+            x: x.into(),
+            y: y.into(),
+        }
+    }
+    pub fn distance(self, rhs: Self) -> f32 {
+        (self.x - rhs.x).hypot(self.y - rhs.y)
+    }
+}
+
 /// The current State an agent.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct AgentState {
     pub tag: Tag,
-    pub position: [f32; 2],
+    pub position: Position,
 }
 
 /// The implementation for the Tag Agent
@@ -44,8 +62,8 @@ impl Agent for TagAgent {
         population: &HashMap<u64, (Self, Self::State)>,
     ) {
         fn run(state: &mut AgentState, board: Board, dx: f32, dy: f32) {
-            state.position[0] = (state.position[0] + dx).clamp(0., board.width as f32 - 1.);
-            state.position[1] = (state.position[1] + dy).clamp(0., board.height as f32 - 1.);
+            state.position.x = (state.position.x + dx).clamp(0., board.width as f32 - 1.);
+            state.position.y = (state.position.y + dy).clamp(0., board.height as f32 - 1.);
         }
 
         if world.current_it == id {
@@ -69,15 +87,16 @@ impl Agent for TagAgent {
                     if id == ag_id || agent.tag == Tag::Recent {
                         continue;
                     }
-                    let [x, y] = state.position;
-                    let [ag_x, ag_y] = population[&world.current_it].1.position;
-                    let d = (ag_x - x).hypot(ag_y - y);
+                    let d = state
+                        .position
+                        .distance(population[&world.current_it].1.position);
                     if d < nearest.1 {
                         nearest = (ag_id, d);
                     }
                 }
-                let [ag_x, ag_y] = population[&nearest.0].1.position;
-                let [x, y] = state.position;
+                let Position { x: ag_x, y: ag_y } = population[&nearest.0].1.position;
+                let Position { x, y } = state.position;
+
                 let dx = if ag_x > x && rng.gen_bool(0.9) {
                     1.
                 } else {
@@ -99,8 +118,9 @@ impl Agent for TagAgent {
             }
             // Flee from "It"
             Tag::None => {
-                let [it_x, it_y] = population[&world.current_it].1.position;
-                let [x, y] = state.position;
+                let Position { x: it_x, y: it_y } = population[&world.current_it].1.position;
+                let Position { x, y } = state.position;
+
                 let mut dx = if it_x < x && rng.gen_bool(0.6) {
                     1.
                 } else {
@@ -112,7 +132,7 @@ impl Agent for TagAgent {
                     -1.
                 };
 
-                if (it_x as f32 - x as f32).hypot(it_y as f32 - y as f32) > 20_f32 {
+                if (Position { x, y }).distance(Position { x: it_x, y: it_y }) > 20_f32 {
                     dx *= -1.;
                     dy *= -1.;
                 }

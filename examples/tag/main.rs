@@ -1,4 +1,4 @@
-#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::module_name_repetitions, clippy::cast_lossless)]
 
 mod agent;
 mod config;
@@ -10,6 +10,7 @@ use std::{
     time::Instant,
 };
 
+use agent::Position;
 use rand::Rng;
 use termion::{event::Key, input::TermRead};
 
@@ -42,16 +43,14 @@ fn main() -> Result<(), std::io::Error> {
     // the world already has the information, which agent is "It" at startup
     // The agent will update the state as soon as the simulation begins
     for _ in 0..config.num_players {
-        let position = [
-            rng.gen_range(0. ..config.board.width as f32),
-            rng.gen_range(0. ..config.board.height as f32),
-        ];
-
         simulation.add_agent(
             TagAgent,
             AgentState {
                 tag: Tag::None,
-                position,
+                position: Position {
+                    x: rng.gen_range(0. ..config.board.width as f32),
+                    y: rng.gen_range(0. ..config.board.height as f32),
+                },
             },
         );
     }
@@ -88,8 +87,8 @@ fn main() -> Result<(), std::io::Error> {
             print!(
                 " - current \"It\": {} at position ({},{})    ",
                 current_it_id,
-                current_it.position[0] + 1.,
-                current_it.position[1] + 1.
+                current_it.position.x + 1.,
+                current_it.position.y + 1.
             );
         }
         stdout().flush()?;
