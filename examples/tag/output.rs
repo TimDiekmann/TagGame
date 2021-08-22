@@ -1,5 +1,6 @@
 use std::{
     io::{stdout, Error, Stdout, Write},
+    iter::repeat,
     time::Duration,
 };
 
@@ -22,6 +23,9 @@ pub struct Output {
     terminal_size: (u16, u16),
     drawn_positions: Vec<(u16, u16)>,
     scroll: (i32, i32),
+    last_ups: Vec<u16>,
+    last_fps: Vec<u16>,
+    tick: u8,
 }
 
 impl Output {
@@ -32,6 +36,9 @@ impl Output {
             terminal_size: terminal_size()?,
             drawn_positions: Vec::new(),
             scroll: (1, 1),
+            last_ups: repeat(0).take(10).collect(),
+            last_fps: repeat(0).take(10).collect(),
+            tick: 0,
         };
 
         output.draw_borders();
@@ -102,16 +109,26 @@ impl Output {
         print!("{}", clear::All);
     }
 
+    #[allow(clippy::similar_names, clippy::cast_possible_truncation)]
     pub fn draw_time(&mut self, calc_time: Duration, draw_time: Duration) -> Result<(), Error> {
-        let calc_time_ms = calc_time.as_millis().clamp(1, u128::MAX);
-        let draw_time_ms = draw_time.as_millis().clamp(1, u128::MAX);
+        let ups = 1000 / calc_time.as_millis().clamp(1, u128::MAX);
+        let fps = 1000 / draw_time.as_millis().clamp(1, u128::MAX);
+
+        self.last_ups[self.tick as usize % 10] = ups as u16;
+        self.last_fps[self.tick as usize % 10] = fps as u16;
+        self.tick += 1;
+
+        let avg_ups = self.last_ups.iter().sum::<u16>() / 10;
+        let avg_fps = self.last_fps.iter().sum::<u16>() / 10;
         write!(
             self.screen,
-            "{}{}tps: {:4} ups, fps: {:4} fps {}",
+            "{}{}tps: {:4} ups ({:4} on avg), fps: {:4} fps ({:4} on avg) {}",
             color::Reset.fg_str(),
             cursor::Goto(1, self.terminal_size.1),
-            1000 / calc_time_ms,
-            1000 / draw_time_ms,
+            ups,
+            avg_ups,
+            fps,
+            avg_fps,
             cursor::Goto(39, 1),
         )
     }
