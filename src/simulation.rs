@@ -96,6 +96,16 @@ impl<A: Agent> Simulation<A> {
             false
         }
     }
+
+    /// Get a reference to the simulation's world.
+    pub fn world(&self) -> &A::World {
+        &self.world
+    }
+
+    /// Get a mutable reference to the simulation's world.
+    pub fn world_mut(&mut self) -> &mut A::World {
+        &mut self.world
+    }
 }
 
 impl<A: Agent> Simulation<A>
