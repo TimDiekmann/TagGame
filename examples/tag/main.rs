@@ -7,7 +7,7 @@ mod world;
 
 use std::{
     fs::File,
-    io::{stdin, BufReader, Write},
+    io::{stdin, stdout, BufReader, Write},
     time::Instant,
 };
 
@@ -122,7 +122,15 @@ fn main() -> Result<(), std::io::Error> {
             Key::Right | Key::Char('l') => viewer.scroll_right(simulation.iter()),
             _ => {}
         }
-        viewer.screen().flush()?;
+        let current_it_id = simulation.world().current_it;
+        if let Some(current_it) = simulation.agent(current_it_id) {
+            print!(
+                " - current \"It\": {} at position ({},{})    ",
+                current_it_id,
+                current_it.position[0] + 1,
+                current_it.position[1] + 1
+            );
+        }
         stdout().flush()?;
     }
     Ok(())

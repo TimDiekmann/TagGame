@@ -1,7 +1,7 @@
 {
     "board": {
-        "width": 205,
-        "height": 18
+        "width": 10,
+        "height": 10
     },
-    "num_players": 50
+    "num_players": 10
 }

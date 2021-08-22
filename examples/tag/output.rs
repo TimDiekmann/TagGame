@@ -43,6 +43,7 @@ impl Output {
         Self::clear();
         self.draw_borders();
         self.draw_players(states);
+        print!("{}{}", color::Reset.fg_str(), cursor::Goto(39, 1));
     }
 
     pub fn scroll_up<'sim>(&mut self, states: impl Iterator<Item = (u64, &'sim AgentState)>) {
@@ -106,11 +107,12 @@ impl Output {
         let draw_time_ms = draw_time.as_millis().clamp(1, u128::MAX);
         write!(
             self.screen,
-            "{}{}tps: {:4} ups, fps: {:4} fps ",
+            "{}{}tps: {:4} ups, fps: {:4} fps {}",
             color::Reset.fg_str(),
             cursor::Goto(1, self.terminal_size.1),
             1000 / calc_time_ms,
             1000 / draw_time_ms,
+            cursor::Goto(39, 1),
         )
     }
 
