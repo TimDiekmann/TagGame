@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Simulation","Adds and removes [`Agent`]s, and updates the them based on their defined behavior."]],"trait":[["Agent","The agent used in the simulation."]]});
+initSidebarItems({"struct":[["Simulation","Adds and removes [`Agent`]s, and updates the them based on their defined behavior."]],"trait":[["Agent","The agent used in the simulation."],["World",""]]});
