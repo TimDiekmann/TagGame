@@ -17,10 +17,10 @@ pub enum Tag {
 }
 
 /// The current State an agent.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct AgentState {
     pub tag: Tag,
-    pub position: [u16; 2],
+    pub position: [f32; 2],
 }
 
 /// The implementation for the Tag Agent
@@ -43,11 +43,9 @@ impl Agent for TagAgent {
         world: &Self::World,
         population: &HashMap<u64, (Self, Self::State)>,
     ) {
-        fn run(state: &mut AgentState, board: Board, dx: i32, dy: i32) {
-            state.position[0] =
-                (state.position[0] as i32 + dx).clamp(0, board.width as i32 - 1) as u16;
-            state.position[1] =
-                (state.position[1] as i32 + dy).clamp(0, board.height as i32 - 1) as u16;
+        fn run(state: &mut AgentState, board: Board, dx: f32, dy: f32) {
+            state.position[0] = (state.position[0] + dx).clamp(0., board.width as f32 - 1.);
+            state.position[1] = (state.position[1] + dy).clamp(0., board.height as f32 - 1.);
         }
 
         if world.current_it == id {
@@ -73,34 +71,50 @@ impl Agent for TagAgent {
                     }
                     let [x, y] = state.position;
                     let [ag_x, ag_y] = population[&world.current_it].1.position;
-                    let d = (ag_x as f32 - x as f32).hypot(ag_y as f32 - y as f32);
+                    let d = (ag_x - x).hypot(ag_y - y);
                     if d < nearest.1 {
                         nearest = (ag_id, d);
                     }
                 }
                 let [ag_x, ag_y] = population[&nearest.0].1.position;
                 let [x, y] = state.position;
-                let dx = if ag_x > x && rng.gen_bool(0.9) { 1 } else { -1 };
-                let dy = if ag_y > y && rng.gen_bool(0.9) { 1 } else { -1 };
+                let dx = if ag_x > x && rng.gen_bool(0.9) {
+                    1.
+                } else {
+                    -1.
+                };
+                let dy = if ag_y > y && rng.gen_bool(0.9) {
+                    1.
+                } else {
+                    -1.
+                };
 
                 run(state, world.board, dx, dy);
             }
             // Run around randomly
             Tag::Recent => {
-                let dx = if rng.gen_bool(0.5) { 1 } else { -1 };
-                let dy = if rng.gen_bool(0.5) { 1 } else { -1 };
+                let dx = if rng.gen_bool(0.5) { 1. } else { -1. };
+                let dy = if rng.gen_bool(0.5) { 1. } else { -1. };
                 run(state, world.board, dx, dy);
             }
             // Flee from "It"
             Tag::None => {
                 let [it_x, it_y] = population[&world.current_it].1.position;
                 let [x, y] = state.position;
-                let mut dx = if it_x < x && rng.gen_bool(0.6) { 1 } else { -1 };
-                let mut dy = if it_y < y && rng.gen_bool(0.6) { 1 } else { -1 };
+                let mut dx = if it_x < x && rng.gen_bool(0.6) {
+                    1.
+                } else {
+                    -1.
+                };
+                let mut dy = if it_y < y && rng.gen_bool(0.6) {
+                    1.
+                } else {
+                    -1.
+                };
 
                 if (it_x as f32 - x as f32).hypot(it_y as f32 - y as f32) > 20_f32 {
-                    dx *= -1;
-                    dy *= -1;
+                    dx *= -1.;
+                    dy *= -1.;
                 }
                 run(state, world.board, dx, dy);
             }

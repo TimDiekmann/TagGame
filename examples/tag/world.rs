@@ -46,12 +46,8 @@ pub struct TagWorld {
 }
 
 impl TagWorld {
-    fn distance(p: [u16; 2], q: [u16; 2]) -> f32 {
-        let p1 = f32::from(p[0]);
-        let p2 = f32::from(p[1]);
-        let q1 = f32::from(q[0]);
-        let q2 = f32::from(q[1]);
-        (q1 - p1).hypot(q2 - p2)
+    fn distance(p: [f32; 2], q: [f32; 2]) -> f32 {
+        (q[0] - p[0]).hypot(q[1] - p[1])
     }
 }
 

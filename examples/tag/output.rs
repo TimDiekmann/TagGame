@@ -73,13 +73,13 @@ impl Output {
         self.after_scrolling(states);
     }
 
-    fn position_to_pixel(&self, x: impl Into<i32>, y: impl Into<i32>) -> Option<(u16, u16)> {
-        let x = x.into() + self.scroll.0 + 1;
-        let y = y.into() + self.scroll.1 + 1;
-        if x > 0
-            && x < i32::from(self.terminal_size.0)
-            && y > 0
-            && y + 1 < i32::from(self.terminal_size.1)
+    fn position_to_pixel(&self, x: f32, y: f32) -> Option<(u16, u16)> {
+        let x = x + self.scroll.0 as f32 + 1.;
+        let y = y + self.scroll.1 as f32 + 1.;
+        if x > 0.
+            && x < self.terminal_size.0 as f32
+            && y > 0.
+            && y + 1. < self.terminal_size.1 as f32
         {
             // `x` and `y` are guaranteed to be greater than 0 and smaller than the terminal size, which is u16
             #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -89,13 +89,7 @@ impl Output {
         }
     }
 
-    fn draw(
-        &mut self,
-        x: impl Into<i32>,
-        y: impl Into<i32>,
-        ch: char,
-        color: Option<&'static str>,
-    ) {
+    fn draw(&mut self, x: f32, y: f32, ch: char, color: Option<&'static str>) {
         if let Some((x, y)) = self.position_to_pixel(x, y) {
             if let Some(color) = color {
                 print!("{}{}{}", cursor::Goto(x, y), color, ch);
@@ -147,16 +141,16 @@ impl Output {
     /// Draws the player onto the board
     pub fn draw_players<'sim>(&mut self, states: impl Iterator<Item = (u64, &'sim AgentState)>) {
         for (x, y) in &self.drawn_positions {
-            if let Some((x, y)) = self.position_to_pixel(*x, *y) {
-                print!("{} ", cursor::Goto(x, y));
-            }
+            // if let Some((x, y)) = self.position_to_pixel(*x, *y) {
+            print!("{} ", cursor::Goto(*x, *y));
+            // }
         }
         self.drawn_positions.clear();
         for (_id, state) in states {
             let x_pos = state.position[0];
             let y_pos = state.position[1];
             if let Some((x, y)) = self.position_to_pixel(x_pos, y_pos) {
-                self.drawn_positions.push((x_pos, y_pos));
+                self.drawn_positions.push((x, y));
                 match state.tag {
                     Tag::It => print!("{}{}@", cursor::Goto(x, y), color::Red.fg_str()),
                     Tag::Recent => print!("{}{}%", cursor::Goto(x, y), color::Yellow.fg_str()),
@@ -169,19 +163,19 @@ impl Output {
     /// Draws the borders of the ... board
     pub fn draw_borders(&mut self) {
         print!("{}", color::Reset.fg_str());
-        self.draw(-1, -1, '╔', None);
+        self.draw(-1., -1., '╔', None);
         for w in 0..self.board.width {
-            self.draw(w, -1, '═', None);
-            self.draw(w, self.board.height, '═', None);
+            self.draw(w as f32, -1., '═', None);
+            self.draw(w as f32, self.board.height as f32, '═', None);
         }
-        self.draw(self.board.width, -1, '╗', None);
+        self.draw(self.board.width as f32, -1., '╗', None);
 
-        self.draw(-1, self.board.height, '╚', None);
+        self.draw(-1., self.board.height as f32, '╚', None);
         for h in 0..self.board.height {
-            self.draw(-1, h, '║', None);
-            self.draw(self.board.width, h, '║', None);
+            self.draw(-1., h as f32, '║', None);
+            self.draw(self.board.width as f32, h as f32, '║', None);
         }
-        self.draw(self.board.width, self.board.height, '╝', None);
+        self.draw(self.board.width as f32, self.board.height as f32, '╝', None);
 
         print!(
             "{} q: Quit, t: Update, h/j/k/l: Scroll ",

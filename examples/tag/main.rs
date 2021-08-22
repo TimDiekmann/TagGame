@@ -43,8 +43,8 @@ fn main() -> Result<(), std::io::Error> {
     // The agent will update the state as soon as the simulation begins
     for _ in 0..config.num_players {
         let position = [
-            rng.gen_range(0..config.board.width),
-            rng.gen_range(0..config.board.height),
+            rng.gen_range(0. ..config.board.width as f32),
+            rng.gen_range(0. ..config.board.height as f32),
         ];
 
         simulation.add_agent(
@@ -88,8 +88,8 @@ fn main() -> Result<(), std::io::Error> {
             print!(
                 " - current \"It\": {} at position ({},{})    ",
                 current_it_id,
-                current_it.position[0] + 1,
-                current_it.position[1] + 1
+                current_it.position[0] + 1.,
+                current_it.position[1] + 1.
             );
         }
         stdout().flush()?;
