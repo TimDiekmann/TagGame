@@ -45,16 +45,6 @@ pub struct TagWorld {
     pub recent_it: Option<u64>,
 }
 
-impl TagWorld {
-    fn distance(p: [u16; 2], q: [u16; 2]) -> f32 {
-        let p1 = f32::from(p[0]);
-        let p2 = f32::from(p[1]);
-        let q1 = f32::from(q[0]);
-        let q2 = f32::from(q[1]);
-        (q1 - p1).hypot(q2 - p2)
-    }
-}
-
 impl World<TagAgent> for TagWorld {
     fn update(&mut self, agents: &mut HashMap<u64, (TagAgent, AgentState)>) {
         let current_it_id = self.current_it;
@@ -69,7 +59,7 @@ impl World<TagAgent> for TagWorld {
                     // No retag
                     continue;
                 }
-                if Self::distance(current_it.position, state.position) < 3_f32 {
+                if current_it.position.distance(state.position) < 3_f32 {
                     next_id.replace(id);
                     break;
                 }

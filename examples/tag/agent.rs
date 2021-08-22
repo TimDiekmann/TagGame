@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use rand::{thread_rng, Rng};
 use tag_game::Agent;
 
-use crate::world::TagWorld;
+use crate::world::{Board, TagWorld};
 
 /// The state, if an agent is tagged.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -16,11 +16,29 @@ pub enum Tag {
     None,
 }
 
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Position {
+    pub x: f32,
+    pub y: f32,
+}
+
+impl Position {
+    pub fn new(x: impl Into<f32>, y: impl Into<f32>) -> Self {
+        Self {
+            x: x.into(),
+            y: y.into(),
+        }
+    }
+    pub fn distance(self, rhs: Self) -> f32 {
+        (self.x - rhs.x).hypot(self.y - rhs.y)
+    }
+}
+
 /// The current State an agent.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct AgentState {
     pub tag: Tag,
-    pub position: [u16; 2],
+    pub position: Position,
 }
 
 /// The implementation for the Tag Agent
@@ -31,13 +49,23 @@ impl Agent for TagAgent {
     type State = AgentState;
     type World = TagWorld;
 
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        clippy::cast_lossless
+    )]
     fn on_update(
         &self,
         id: u64,
         state: &mut Self::State,
         world: &Self::World,
-        _population: &HashMap<u64, (Self, Self::State)>,
+        population: &HashMap<u64, (Self, Self::State)>,
     ) {
+        fn run(state: &mut AgentState, board: Board, dx: f32, dy: f32) {
+            state.position.x = (state.position.x + dx).clamp(0., board.width as f32 - 1.);
+            state.position.y = (state.position.y + dy).clamp(0., board.height as f32 - 1.);
+        }
+
         if world.current_it == id {
             state.tag = Tag::It;
         } else if let Some(recent_it) = world.recent_it {
@@ -47,20 +75,63 @@ impl Agent for TagAgent {
                 state.tag = Tag::None;
             }
         }
+
         let mut rng = thread_rng();
 
-        let dx = 1;
-        if rng.gen_bool(0.5) && state.position[0] < world.board.width - 1 {
-            state.position[0] += dx;
-        } else if state.position[0] > 0 {
-            state.position[0] -= dx;
-        }
+        match state.tag {
+            // Search an agent to tag
+            Tag::It => {
+                let mut nearest = (id, f32::MAX);
+                // Find the nearest agent
+                for (&ag_id, (_, agent)) in population {
+                    if id == ag_id || agent.tag == Tag::Recent {
+                        continue;
+                    }
+                    let d = state
+                        .position
+                        .distance(population[&world.current_it].1.position);
+                    if d < nearest.1 {
+                        nearest = (ag_id, d);
+                    }
+                }
+                let Position { x: ag_x, y: ag_y } = population[&nearest.0].1.position;
+                let Position { x, y } = state.position;
 
-        let dy = 1;
-        if rng.gen_bool(0.5) && state.position[1] < world.board.height - 1 {
-            state.position[1] += dy;
-        } else if state.position[1] > 0 {
-            state.position[1] -= dy;
+                let dx = if ag_x > x && rng.gen_bool(0.9) {
+                    1.
+                } else {
+                    -1.
+                };
+                let dy = if ag_y > y && rng.gen_bool(0.9) {
+                    1.
+                } else {
+                    -1.
+                };
+
+                run(state, world.board, dx, dy);
+            }
+            // Run around randomly
+            Tag::Recent => {
+                let dx = if rng.gen_bool(0.5) { 1. } else { -1. };
+                let dy = if rng.gen_bool(0.5) { 1. } else { -1. };
+                run(state, world.board, dx, dy);
+            }
+            // Flee from "It"
+            Tag::None => {
+                let Position { x: it_x, y: it_y } = population[&world.current_it].1.position;
+                let Position { x, y } = state.position;
+
+                let mut dx = if it_x < x { 1. } else { -1. };
+                let mut dy = if it_y < y { 1. } else { -1. };
+                dx *= if rng.gen_bool(0.7) { 1. } else { -1. };
+                dy *= if rng.gen_bool(0.7) { 1. } else { -1. };
+
+                if (Position { x, y }).distance(Position { x: it_x, y: it_y }) > 20_f32 {
+                    dx *= -1.;
+                    dy *= -1.;
+                }
+                run(state, world.board, dx, dy);
+            }
         }
     }
 }
