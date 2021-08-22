@@ -1,6 +1,6 @@
 use std::{
-    fs::{self, File},
-    io::{self, BufReader},
+    fs::{File, OpenOptions},
+    io::{self, BufReader, BufWriter},
 };
 
 use serde::{Deserialize, Serialize};
@@ -29,16 +29,18 @@ impl Default for Config {
 
 impl Config {
     pub fn load() -> Result<Self, io::Error> {
-        let example_dir = std::env::current_dir()?.join("examples").join("tag");
-        let config_file_path = example_dir.join("config.json");
-        let config_file = if let Ok(file) = File::open(&config_file_path) {
-            BufReader::new(file)
+        let config_file_path = std::env::current_dir()?
+            .join("examples")
+            .join("tag")
+            .join("config.json");
+        if let Ok(file) = File::open(&config_file_path) {
+            Ok(serde_json::from_reader(BufReader::new(file))?)
         } else {
-            let template_path = example_dir.join("config.template.json");
-            fs::copy(template_path, &config_file_path)?;
-            BufReader::new(File::open(config_file_path)?)
-        };
-        Ok(serde_json::from_reader(config_file)?)
+            let writer = BufWriter::new(OpenOptions::new().write(true).open(config_file_path)?);
+            let config = Self::default();
+            serde_json::to_writer_pretty(writer, &Self::default())?;
+            Ok(config)
+        }
     }
 
     fn default_num_players() -> u64 {
