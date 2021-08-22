@@ -1,66 +1,113 @@
-#![allow(unused)]
+#![allow(clippy::module_name_repetitions)]
 
-use tag_game::{Agent, Simulation};
+mod agent;
+mod config;
+mod output;
+mod world;
 
-/// The state, if an agent is tagged.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-enum Tag {
-    /// The agent is currently "It"
-    It,
-    /// The agent recently was "It"
-    Recent,
-    /// The agent can be tagged by "It"
-    None,
+use std::{
+    fs::File,
+    io::{stdin, BufReader, Write},
+};
+
+use rand::Rng;
+use termion::{event::Key, input::TermRead};
+
+use tag_game::Simulation;
+
+use crate::{
+    agent::{AgentState, Tag, TagAgent},
+    config::Config,
+    output::Output,
+    world::{Board, World},
+};
+
+fn distance(p: [u16; 2], q: [u16; 2]) -> f32 {
+    let p1 = f32::from(p[0]);
+    let p2 = f32::from(p[1]);
+    let q1 = f32::from(q[0]);
+    let q2 = f32::from(q[1]);
+    (q1 - p1).hypot(q2 - p2)
 }
 
-/// The current State an agent.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-struct AgentState {
-    pub tag: Tag,
+fn check_tag(simulation: &mut Simulation<TagAgent>) {
+    let current_it_id = simulation.world().current_it;
+    let mut next_id = None;
+    if let Some(current_it) = simulation.agent(current_it_id) {
+        for (id, agent) in simulation.iter() {
+            if id == current_it_id {
+                // One can't tag themself
+                continue;
+            }
+            if agent.tag == Tag::Recent {
+                // No retag
+                continue;
+            }
+            if distance(current_it.position, agent.position) < 3_f32 {
+                next_id.replace(id);
+                break;
+            }
+        }
+    }
+    if let Some(next_id) = next_id {
+        let world = simulation.world_mut();
+        world.recent_it = Some(current_it_id);
+        world.current_it = next_id;
+    }
 }
 
-/// Prints to the console as soon as an event occurs.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-struct PrintBehavior;
+fn main() -> Result<(), std::io::Error> {
+    let config_file_path = std::env::current_dir()?
+        .join("examples")
+        .join("tag")
+        .join("config.json");
+    let config_file = BufReader::new(File::open(config_file_path)?);
+    let config: Config = serde_json::from_reader(config_file)?;
 
-impl Agent for PrintBehavior {
-    type State = AgentState;
-    type World = ();
+    // Initialize random generator
+    let mut rng = rand::thread_rng();
 
-    fn on_creation(&self, id: u64, state: &mut Self::State, _world: &Self::World) {
-        println!("Agent created. id: {}, tag: {:?}", id, state.tag);
-    }
+    // Initialize world
+    let world = World {
+        board: config.board,
+        current_it: rng.gen_range(0..config.num_players),
+        recent_it: None,
+    };
 
-    fn on_deletion(&self, id: u64, state: &mut Self::State, _world: &Self::World) {
-        println!("Agent removed. id: {}, tag: {:?}", id, state.tag);
-    }
+    // create the simulation with the created world
+    let mut simulation = Simulation::new(world);
 
-    fn on_update<'sim>(
-        &'sim self,
-        id: u64,
-        state: &'sim mut Self::State,
-        world: &'sim Self::World,
-        population: impl Iterator<Item = (u64, &'sim Self::State)>,
-    ) {
-        println!(
-            "UPDATE id: {}, state: {:?}, world: {:?}, population: {:?}",
-            id,
-            state.tag,
-            world,
-            population.map(|(id, _)| id).collect::<Vec<_>>()
+    // create the agents
+    // the world already has the information, which agent is "It" at startup
+    // The agent will update the state as soon as the simulation begins
+    for _ in 0..config.num_players {
+        let position = [
+            rng.gen_range(0..config.board.width),
+            rng.gen_range(0..config.board.height),
+        ];
+
+        simulation.add_agent(
+            TagAgent,
+            AgentState {
+                tag: Tag::None,
+                position,
+            },
         );
     }
-}
 
-fn main() {
-    let mut simulation = Simulation::new(());
+    let mut viewer = Output::new(config.board)?;
 
-    let it_state = AgentState { tag: Tag::It };
-    let no_state = AgentState { tag: Tag::None };
-
-    simulation.add_agent(PrintBehavior, it_state);
-    simulation.add_agent(PrintBehavior, no_state);
-    simulation.add_agent(PrintBehavior, no_state);
-
-    simulation.update();
+    for c in stdin().keys() {
+        match c? {
+            Key::Char('q') | Key::Esc | Key::Ctrl('c' | 'd') => break,
+            Key::Char('t') => {
+                check_tag(&mut simulation);
+                simulation.update();
+                viewer.draw_players(simulation.iter())?;
+            }
+            _ => {}
+        }
+        viewer.screen().flush()?;
+    }
+    Ok(())
 }

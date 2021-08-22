@@ -96,6 +96,16 @@ impl<A: Agent> Simulation<A> {
             false
         }
     }
+
+    /// Get a reference to the simulation's world.
+    pub fn world(&self) -> &A::World {
+        &self.world
+    }
+
+    /// Get a mutable reference to the simulation's world.
+    pub fn world_mut(&mut self) -> &mut A::World {
+        &mut self.world
+    }
 }
 
 impl<A: Agent> Simulation<A>
@@ -151,6 +161,23 @@ mod tests {
 
         *simulation.agent_mut(agent_id).unwrap() = 43;
         assert_eq!(simulation.agent(agent_id), Some(&43));
+    }
+
+    #[test]
+    fn test_world() {
+        struct WorldTestAgent;
+
+        impl Agent for WorldTestAgent {
+            type State = ();
+            type World = &'static str;
+        }
+
+        let mut simulation = Simulation::<WorldTestAgent>::new("world");
+
+        assert_eq!(*simulation.world(), "world");
+
+        *simulation.world_mut() = "hello";
+        assert_eq!(*simulation.world(), "hello");
     }
 
     #[test]

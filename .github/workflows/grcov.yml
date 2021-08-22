@@ -46,16 +46,6 @@ jobs:
           RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort -Cdebug-assertions=off'
           RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort -Cdebug-assertions=off'
 
-      - name: Examples
-        uses: actions-rs/cargo@v1
-        with:
-          command: run
-          args: --example tag
-        env:
-          CARGO_INCREMENTAL: "0"
-          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort -Cdebug-assertions=off'
-          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort -Cdebug-assertions=off'
-
       - name: Generate coverage data
         id: grcov
         run: |
@@ -67,6 +57,7 @@ jobs:
               --ignore='/**' \
               --ignore='C:/**' \
               --ignore='../**' \
+              --ignore='examples/**' \
               --ignore-not-existing \
               --excl-line "^#" \
               --excl-br-line "^#" \
