@@ -6,8 +6,7 @@ mod output;
 mod world;
 
 use std::{
-    fs::File,
-    io::{stdin, stdout, BufReader, Write},
+    io::{stdin, stdout, Write},
     time::Instant,
 };
 

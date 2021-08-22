@@ -1,6 +1,6 @@
 use std::{
     fs::{self, File},
-    io::{self, BufReader, BufWriter, Write},
+    io::{self, BufReader},
 };
 
 use serde::{Deserialize, Serialize};
