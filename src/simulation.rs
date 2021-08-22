@@ -4,15 +4,18 @@ use rayon::prelude::*;
 
 use crate::{Agent, World};
 
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub struct Id(pub u64);
+
 /// Adds and removes [`Agent`]s, and updates the them
 /// based on their defined behavior.
 ///
 /// Please see the [crate documentation][crate] for examples.
 pub struct Simulation<A: Agent> {
-    agents: HashMap<u64, (A, A::State)>,
-    state_buffer: HashMap<u64, (A, A::State)>,
+    agents: HashMap<Id, (A, A::State)>,
+    state_buffer: HashMap<Id, (A, A::State)>,
     world: A::World,
-    latest_id: u64,
+    latest_id: Id,
 }
 
 impl<A: Agent> Simulation<A> {
@@ -23,38 +26,38 @@ impl<A: Agent> Simulation<A> {
         Self {
             world,
             agents: HashMap::new(),
-            latest_id: 0,
+            latest_id: Id(0),
             state_buffer: HashMap::new(),
         }
     }
 
     /// Returns if an agent with the provided `id` is present to the simulation.
     #[inline]
-    pub fn has_agent(&self, id: u64) -> bool {
+    pub fn has_agent(&self, id: Id) -> bool {
         self.agent(id).is_some()
     }
 
     /// Returns a reference to the state of the agent identified by the provided id.
-    pub fn agent(&self, id: u64) -> Option<&A::State> {
+    pub fn agent(&self, id: Id) -> Option<&A::State> {
         self.agents.get(&id).map(|(_, s)| s)
     }
 
     /// Returns a mutable reference to the state of the agent identified by the provided id.
-    pub fn agent_mut(&mut self, id: u64) -> Option<&mut A::State> {
+    pub fn agent_mut(&mut self, id: Id) -> Option<&mut A::State> {
         self.agents.get_mut(&id).map(|(_, s)| s)
     }
 
     /// Returns an iterator over all agents added to the simulation.
     ///
     /// Please see the [crate documentation][crate] for examples.
-    pub fn iter(&self) -> impl Iterator<Item = (u64, &A::State)> {
+    pub fn iter(&self) -> impl Iterator<Item = (Id, &A::State)> {
         self.agents.iter().map(|(&id, (_, s))| (id, s))
     }
 
     /// Returns a mutable iterator over all agents added to the simulation.
     ///
     /// Please see the [crate documentation][crate] for examples.
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = (u64, &mut A::State)> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (Id, &mut A::State)> {
         self.agents.iter_mut().map(|(&id, (_, s))| (id, s))
     }
 
@@ -69,7 +72,7 @@ impl<A: Agent> Simulation<A> {
     /// # Panics
     ///
     /// When the simulation runs out of unique identifiers (2^64).
-    pub fn add_agent(&mut self, agent: A, state: A::State) -> u64 {
+    pub fn add_agent(&mut self, agent: A, state: A::State) -> Id {
         let id = self.latest_id;
         let (agent, state) = if let Entry::Vacant(entry) = self.agents.entry(id) {
             entry.insert((agent, state))
@@ -79,7 +82,7 @@ impl<A: Agent> Simulation<A> {
 
         agent.on_creation(id, state, &self.world);
 
-        self.latest_id += 1;
+        self.latest_id.0 += 1;
         id
     }
 
@@ -90,7 +93,7 @@ impl<A: Agent> Simulation<A> {
     /// Returns, if the deletion was successful.
     ///
     /// Please see the [crate documentation][crate] for examples.
-    pub fn remove_agent(&mut self, id: u64) -> bool {
+    pub fn remove_agent(&mut self, id: Id) -> bool {
         if let Entry::Occupied(mut entry) = self.agents.entry(id) {
             let (agent, state) = entry.get_mut();
             agent.on_deletion(id, state, &self.world);
@@ -146,7 +149,7 @@ mod tests {
         sync::atomic::{AtomicU64, Ordering},
     };
 
-    use crate::{Agent, Simulation, World};
+    use crate::{Agent, Id, Simulation, World};
 
     #[derive(Debug, PartialEq, Eq)]
     struct SimpleWorld(&'static str);
@@ -210,20 +213,20 @@ mod tests {
         type State = ();
         type World = ();
 
-        fn on_creation(&self, _id: u64, _state: &mut Self::State, _world: &Self::World) {
+        fn on_creation(&self, _id: Id, _state: &mut Self::State, _world: &Self::World) {
             self.on_creation_count.fetch_add(1, Ordering::Relaxed);
         }
 
-        fn on_deletion(&self, _id: u64, _state: &mut Self::State, _world: &Self::World) {
+        fn on_deletion(&self, _id: Id, _state: &mut Self::State, _world: &Self::World) {
             self.on_deletion_count.fetch_add(1, Ordering::Relaxed);
         }
 
         fn on_update<'sim>(
             &'sim self,
-            _id: u64,
+            _id: Id,
             _state: &'sim mut Self::State,
             _world: &'sim Self::World,
-            _population: &HashMap<u64, (Self, Self::State)>,
+            _population: &HashMap<Id, (Self, Self::State)>,
         ) {
             self.on_update_count.fetch_add(1, Ordering::SeqCst);
         }

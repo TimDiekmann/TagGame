@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use crate::Agent;
+use crate::{Agent, Id};
 
 pub trait World<A: Agent> {
     #[allow(unused_variables)]
-    fn update(&mut self, agents: &mut HashMap<u64, (A, A::State)>) {}
+    fn update(&mut self, agents: &mut HashMap<Id, (A, A::State)>) {}
 }
 
 impl<T: Agent> World<T> for () {}
