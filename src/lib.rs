@@ -38,5 +38,5 @@ mod simulation;
 mod world;
 
 pub use self::agent::Agent;
-pub use self::simulation::{Id, Simulation};
+pub use self::simulation::Simulation;
 pub use self::world::World;

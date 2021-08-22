@@ -1,6 +1,4 @@
-use std::collections::HashMap;
-
-use crate::{Id, World};
+use crate::World;
 
 /// The agent used in the simulation.
 ///
@@ -21,20 +19,16 @@ pub trait Agent: Sized + Send + Sync {
 
     /// Called when an agent is added to the simulation.
     #[allow(unused_variables)]
-    fn on_creation(&self, id: Id, state: &mut Self::State, world: &Self::World) {}
-
-    /// Called when an agent is removed from the world.
-    #[allow(unused_variables)]
-    fn on_deletion(&self, id: Id, state: &mut Self::State, world: &Self::World) {}
+    fn on_creation(&self, id: usize, state: &mut Self::State, world: &Self::World) {}
 
     /// Called when the simulation is updated.
     #[allow(unused_variables)]
     fn on_update(
         &self,
-        id: Id,
+        id: usize,
         state: &mut Self::State,
         world: &Self::World,
-        population: &HashMap<Id, (Self, Self::State)>,
+        population: &[(Self, Self::State)],
     ) {
     }
 }

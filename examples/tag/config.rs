@@ -32,7 +32,7 @@ impl Default for AgentConfig {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub board: Board,
-    pub num_players: u64,
+    pub num_players: usize,
     pub step: u32,
     pub agents: AgentConfig,
 }
