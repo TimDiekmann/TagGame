@@ -97,6 +97,10 @@ fn main() -> Result<(), std::io::Error> {
     }
 
     let mut viewer = Output::new(config.board)?;
+    check_tag(&mut simulation);
+    simulation.update();
+    viewer.draw_players(simulation.iter());
+    stdout().flush()?;
 
     for c in stdin().keys() {
         match c? {
@@ -107,13 +111,19 @@ fn main() -> Result<(), std::io::Error> {
                 simulation.update();
                 let calc_time = start.elapsed();
                 let start = Instant::now();
-                viewer.draw_players(simulation.iter())?;
+                viewer.draw_players(simulation.iter());
                 let draw_time = start.elapsed();
+                stdout().flush()?;
                 viewer.draw_time(calc_time, draw_time)?;
             }
+            Key::Left | Key::Char('h') => viewer.scroll_left(simulation.iter()),
+            Key::Down | Key::Char('j') => viewer.scroll_down(simulation.iter()),
+            Key::Up | Key::Char('k') => viewer.scroll_up(simulation.iter()),
+            Key::Right | Key::Char('l') => viewer.scroll_right(simulation.iter()),
             _ => {}
         }
         viewer.screen().flush()?;
+        stdout().flush()?;
     }
     Ok(())
 }
