@@ -1,9 +1,7 @@
-use std::collections::HashMap;
-
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
-use tag_game::{Agent, Id};
+use tag_game::Agent;
 
 use crate::world::{Board, TagWorld};
 
@@ -12,7 +10,7 @@ use crate::world::{Board, TagWorld};
 pub enum Tag {
     /// The agent is currently "It". If the id is set, "It" has tagged
     /// a new agent, which will become "It" next tick.
-    It(Option<Id>),
+    It(Option<usize>),
     /// The agent recently was "It".
     Recent,
     /// The agent can be tagged by "It".
@@ -70,15 +68,21 @@ impl Agent for TagAgent {
     )]
     fn on_update(
         &self,
-        id: Id,
+        id: usize,
         state: &mut Self::State,
         world: &Self::World,
-        population: &HashMap<Id, (Self, Self::State)>,
+        population: &[(Self, Self::State)],
     ) {
         fn run(state: &mut AgentState, board: Board, dx: f32, dy: f32) {
             state.position.x = (state.position.x + dx).clamp(0., board.width as f32 - 1.);
             state.position.y = (state.position.y + dy).clamp(0., board.height as f32 - 1.);
         }
+
+        let mut rng = thread_rng();
+
+        // chosen by fair dice roll.
+        // guaranteed to be random.
+        let mut random_bool = |probability| -> bool { probability > rng.gen_range(0.0..1.0) };
 
         if world.current_it == id {
             state.tag = Tag::It(None);
@@ -90,14 +94,12 @@ impl Agent for TagAgent {
             }
         }
 
-        let mut rng = thread_rng();
-
         match &mut state.tag {
             // Search an agent to tag
             Tag::It(next) => {
                 let mut nearest = (id, f32::MAX);
                 // Find the nearest agent
-                for (&ag_id, (_, agent)) in population {
+                for (ag_id, (_, agent)) in population.iter().enumerate() {
                     if id == ag_id {
                         continue;
                     }
@@ -117,17 +119,17 @@ impl Agent for TagAgent {
                     return;
                 }
 
-                let Position { x: ag_x, y: ag_y } = population[&nearest.0].1.position;
+                let Position { x: ag_x, y: ag_y } = population[nearest.0].1.position;
                 let Position { x, y } = state.position;
 
                 let mut dx = if ag_x > x { 1. } else { -1. };
                 let mut dy = if ag_y > y { 1. } else { -1. };
-                dx *= if rng.gen_bool(state.properties.tagged_deciding) {
+                dx *= if random_bool(state.properties.tagged_deciding) {
                     1.
                 } else {
                     -1.
                 } * state.properties.tagged_speed_multiplied;
-                dy *= if rng.gen_bool(state.properties.tagged_deciding) {
+                dy *= if random_bool(state.properties.tagged_deciding) {
                     1.
                 } else {
                     -1.
@@ -137,23 +139,23 @@ impl Agent for TagAgent {
             }
             // Run around randomly
             Tag::Recent => {
-                let dx = if rng.gen_bool(0.5) { 1. } else { -1. };
-                let dy = if rng.gen_bool(0.5) { 1. } else { -1. };
+                let dx = if random_bool(0.5) { 1. } else { -1. };
+                let dy = if random_bool(0.5) { 1. } else { -1. };
                 run(state, world.board, dx, dy);
             }
             // Flee from "It"
             Tag::None => {
-                let Position { x: it_x, y: it_y } = population[&world.current_it].1.position;
+                let Position { x: it_x, y: it_y } = population[world.current_it].1.position;
                 let Position { x, y } = state.position;
 
                 let mut dx = if it_x < x { 1. } else { -1. };
                 let mut dy = if it_y < y { 1. } else { -1. };
-                dx *= if rng.gen_bool(state.properties.untagged_deciding) {
+                dx *= if random_bool(state.properties.untagged_deciding) {
                     1.
                 } else {
                     -1.
                 } * state.properties.untagged_speed_multiplied;
-                dy *= if rng.gen_bool(state.properties.untagged_deciding) {
+                dy *= if random_bool(state.properties.untagged_deciding) {
                     1.
                 } else {
                     -1.
