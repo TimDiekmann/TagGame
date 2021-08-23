@@ -32,30 +32,42 @@
 <span id="32">32</span>
 <span id="33">33</span>
 <span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::World</span>;
 
-<span class="doccomment">/// The agent used in the simulation.</span>
+<span class="doccomment">/// An agent defines, how to act in a simulation.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// This defines the behavior on creation, deletion or updates in the simulated environment.</span>
-<span class="doccomment">/// Every agent is associated with an `id` and a state. The `id` is unique across one simulation</span>
-<span class="doccomment">/// and acts as an identifier. In most cases, it&#39;s not needed by the user.</span>
+<span class="doccomment">/// The [`Simulation`] associates the agent with a state, which can be mutated</span>
+<span class="doccomment">/// by the agent every tick.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// The state contains data for the agent and can be modified in every function defined by the</span>
-<span class="doccomment">/// agent.</span>
+<span class="doccomment">/// `State` can be seen as data related to the agent itself. The `World` is the global state shared</span>
+<span class="doccomment">/// between all agents in a simulation.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// The world is a global state, which can only be changed outside of the simulation and is passed</span>
-<span class="doccomment">/// to every agent.</span>
+<span class="doccomment">/// [`Simulation`]: crate::Simulation</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Agent</span>: <span class="ident">Sized</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> {
-    <span class="doccomment">/// The state associated with the agent</span>
+    <span class="doccomment">/// The local state associated with the agent</span>
     <span class="kw">type</span> <span class="ident">State</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span>;
-    <span class="doccomment">/// The state of the world, provided by the simulation</span>
+    <span class="doccomment">/// The global state, provided by the simulation</span>
     <span class="kw">type</span> <span class="ident">World</span>: <span class="ident">World</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Sync</span>;
 
     <span class="doccomment">/// Called when an agent is added to the simulation.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// The `id` is a unique id used in the simulation, which is generated when adding the agent to</span>
+    <span class="doccomment">/// the simulation. The `state` is the same state passed to [`Simulation::add_agent()`].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [`Simulation::add_agent()`]: crate::Simulation::add_agent()</span>
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">unused_variables</span>)]</span>
     <span class="kw">fn</span> <span class="ident">on_creation</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">id</span>: <span class="ident">usize</span>, <span class="ident">state</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident"><span class="self">Self</span>::State</span>, <span class="ident">world</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::World</span>) {}
 
     <span class="doccomment">/// Called when the simulation is updated.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// It retrieves the same parameters as [`Agent::on_creation()`] and a list, of all agents,</span>
+    <span class="doccomment">/// which are currently added to the simulation. `population[id]` corresponds to this agent.</span>
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">unused_variables</span>)]</span>
     <span class="kw">fn</span> <span class="ident">on_update</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,

@@ -188,12 +188,25 @@
 <span id="188">188</span>
 <span id="189">189</span>
 <span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">rayon::prelude</span>::<span class="kw-2">*</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Agent</span>, <span class="ident">World</span>};
 
-<span class="doccomment">/// Adds and removes [`Agent`]s, and updates the them</span>
-<span class="doccomment">/// based on their defined behavior.</span>
+<span class="doccomment">/// Keeps track of all [`Agent`]s, its states and the global state.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// It&#39;s responsible to update the `Agent`s states based on their defined behavior.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// Please see the [crate documentation][crate] for examples.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Simulation</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Agent</span><span class="op">&gt;</span> {
@@ -203,9 +216,9 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Agent</span><span class="op">&gt;</span> <span class="ident">Simulation</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> {
-    <span class="doccomment">/// Creates a simulation, where different agents can be created.</span>
+    <span class="doccomment">/// Creates a simulation with the provided [`World`].</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Please see the [crate documentation][crate] for examples.</span>
+    <span class="doccomment">/// The `World` is passed to the agents, when they get update.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">world</span>: <span class="ident">A::World</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">world</span>,
@@ -214,33 +227,33 @@
         }
     }
 
-    <span class="doccomment">/// Returns a slice over all agents added to the simulation.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// Please see the [crate documentation][crate] for examples.</span>
+    <span class="doccomment">/// Creates a simulation with the provided [`World`] and reserves memory for the spcified</span>
+    <span class="doccomment">/// number of agent without the need for reallocating.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_capacity</span>(<span class="ident">world</span>: <span class="ident">A::World</span>, <span class="ident">num_agent</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span> {
+            <span class="ident">world</span>,
+            <span class="ident">agents</span>: <span class="ident">Vec::with_capacity</span>(<span class="ident">num_agent</span>),
+            <span class="ident">state_buffer</span>: <span class="ident">Vec::with_capacity</span>(<span class="ident">num_agent</span>),
+        }
+    }
+
+    <span class="doccomment">/// Returns a slice over all agents and its state added to the simulation.</span>
     <span class="attribute">#[<span class="ident">inline</span>]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">agents</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[(<span class="ident">A</span>, <span class="ident">A::State</span>)] {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">agents</span>
     }
 
-    <span class="doccomment">/// Returns a mutable iterator over all agents added to the simulation.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// Please see the [crate documentation][crate] for examples.</span>
+    <span class="doccomment">/// Returns a mutable slice over all agents and its state added to the simulation.</span>
     <span class="attribute">#[<span class="ident">inline</span>]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">agents_mut</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> [(<span class="ident">A</span>, <span class="ident">A::State</span>)] {
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">agents</span>
     }
 
-    <span class="doccomment">/// Add a new agent to the simulation.</span>
+    <span class="doccomment">/// Add a new agent with an initial to the simulation.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// After adding the agent to the simulation, [`Agent::on_creation`] is called.</span>
+    <span class="doccomment">/// This will call [`Agent::on_creation()`] when the agent was created.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Returns a unique identifier for the created agent.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// Please see the [crate documentation][crate] for examples.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// # Panics</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// When the simulation runs out of unique identifiers (2^64).</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_agent</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">agent</span>: <span class="ident">A</span>, <span class="kw-2">mut</span> <span class="ident">state</span>: <span class="ident">A::State</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
         <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">agents</span>.<span class="ident">len</span>();
         <span class="ident">agent</span>.<span class="ident">on_creation</span>(<span class="ident">id</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">state</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">world</span>);
@@ -248,12 +261,12 @@
         <span class="ident">id</span>
     }
 
-    <span class="doccomment">/// Get a reference to the simulation&#39;s world.</span>
+    <span class="doccomment">/// Get a shared reference to the global state.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">world</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">A::World</span> {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">world</span>
     }
 
-    <span class="doccomment">/// Get a mutable reference to the simulation&#39;s world.</span>
+    <span class="doccomment">/// Get a unique reference to the global state.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">world_mut</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">A::World</span> {
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">world</span>
     }
@@ -264,7 +277,18 @@
     <span class="ident">A</span>: <span class="ident">Clone</span>,
     <span class="ident">A::State</span>: <span class="ident">Clone</span>,
 {
-    <span class="doccomment">/// Calls [`Agent::on_update`] for every registered agent.</span>
+    <span class="doccomment">/// Advances the simulation by one tick.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// First, on every added Agent, [`Agent::on_update()`] is invoked in arbitrary order.</span>
+    <span class="doccomment">/// This happens in parallel. Afterwards, the global state is updated by calling</span>
+    <span class="doccomment">/// [`World::update()`].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// To every [`Agent`] it&#39;s current state is passed as unique reference. Also a list</span>
+    <span class="doccomment">/// of all other agents is passed as shared reference. The list is updated once before</span>
+    <span class="doccomment">/// the tick and every agent will receive the same list.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// When updating the global state, a mutable slice to all `Agent`s and its states</span>
+    <span class="doccomment">/// are passed to [`World`].</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">update</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
         <span class="self">self</span>.<span class="ident">state_buffer</span>.<span class="ident">clone_from</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">agents</span>);
         <span class="kw">let</span> <span class="ident">state_buffer</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">state_buffer</span>;

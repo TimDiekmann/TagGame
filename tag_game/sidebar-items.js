@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Simulation","Adds and removes [`Agent`]s, and updates the them based on their defined behavior."]],"trait":[["Agent","The agent used in the simulation."],["World",""]]});
+initSidebarItems({"struct":[["Simulation","Keeps track of all [`Agent`]s, its states and the global state."]],"trait":[["Agent","An agent defines, how to act in a simulation."],["World","The world holds the global state used in the simulation"]]});
