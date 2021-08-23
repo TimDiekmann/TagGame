@@ -1,5 +1,5 @@
 use std::{
-    io::{stdout, Error, Stdout, Write},
+    io::{stdout, Error, Stdout},
     iter::repeat,
     time::Duration,
 };
@@ -13,7 +13,7 @@ use termion::{
 };
 
 use crate::{
-    agent::{AgentState, Position, Tag, TagAgent},
+    agent::{AgentState, Position},
     world::Board,
 };
 
@@ -35,7 +35,7 @@ impl Pixel {
 
 /// Draws the board and the agent on the terminal.
 pub struct Output {
-    screen: HideCursor<AlternateScreen<RawTerminal<Stdout>>>,
+    _screen: HideCursor<AlternateScreen<RawTerminal<Stdout>>>,
     board: Board,
     terminal_size: (u16, u16),
     drawn_positions: Vec<Pixel>,
@@ -49,7 +49,7 @@ impl Output {
     /// Creates an output to draw agents to the terminal.
     pub fn new(board: Board) -> Result<Self, Error> {
         let mut output = Self {
-            screen: HideCursor::from(AlternateScreen::from(stdout().into_raw_mode()?)),
+            _screen: HideCursor::from(AlternateScreen::from(stdout().into_raw_mode()?)),
             board,
             terminal_size: terminal_size()?,
             drawn_positions: Vec::new(),
@@ -63,7 +63,7 @@ impl Output {
         Ok(output)
     }
 
-    fn after_scrolling(&mut self, states: &[(TagAgent, AgentState)]) {
+    fn after_scrolling(&mut self, states: &[AgentState]) {
         self.drawn_positions.clear();
         Self::clear();
         self.draw_borders();
@@ -72,25 +72,25 @@ impl Output {
     }
 
     /// Scroll the board up
-    pub fn scroll_up(&mut self, states: &[(TagAgent, AgentState)]) {
+    pub fn scroll_up(&mut self, states: &[AgentState]) {
         self.scroll.1 = self.scroll.1.saturating_add(1);
         self.after_scrolling(states);
     }
 
     /// Scroll the board down
-    pub fn scroll_down(&mut self, states: &[(TagAgent, AgentState)]) {
+    pub fn scroll_down(&mut self, states: &[AgentState]) {
         self.scroll.1 = self.scroll.1.saturating_sub(1);
         self.after_scrolling(states);
     }
 
     /// Scroll the board to the left
-    pub fn scroll_left(&mut self, states: &[(TagAgent, AgentState)]) {
+    pub fn scroll_left(&mut self, states: &[AgentState]) {
         self.scroll.0 = self.scroll.0.saturating_add(1);
         self.after_scrolling(states);
     }
 
     /// Scroll the board to the right
-    pub fn scroll_right(&mut self, states: &[(TagAgent, AgentState)]) {
+    pub fn scroll_right(&mut self, states: &[AgentState]) {
         self.scroll.0 = self.scroll.0.saturating_sub(1);
         self.after_scrolling(states);
     }
@@ -133,12 +133,7 @@ impl Output {
         clippy::cast_sign_loss,
         clippy::similar_names
     )]
-    pub fn draw_time(
-        &mut self,
-        calc_time: Duration,
-        draw_time: Duration,
-        step: u32,
-    ) -> Result<(), Error> {
+    pub fn draw_time(&mut self, calc_time: Duration, draw_time: Duration, step: u32) {
         let ups = 1_000_000_f64 / (calc_time.as_micros().clamp(1, u128::MAX) as f64 / step as f64);
         // let draw_time = draw_time.as_millis();
 
@@ -148,8 +143,7 @@ impl Output {
 
         let avg_ups = self.last_ups.iter().sum::<u32>() / 10;
         let avg_draw_times = self.last_draw_times.iter().sum::<Duration>() / 10;
-        write!(
-            self.screen,
+        print!(
             "{}{}{:4} ups ({:4} on avg), frame time: {:4?} ({:4?} on avg) {}",
             color::Reset.fg_str(),
             cursor::Goto(1, self.terminal_size.1),
@@ -158,24 +152,26 @@ impl Output {
             draw_time,
             avg_draw_times,
             cursor::Goto(39, 1),
-        )
+        );
     }
 
     /// Draws the player onto the board
-    pub fn draw_players(&mut self, states: &[(TagAgent, AgentState)]) {
+    pub fn draw_players(&mut self, states: &[AgentState]) {
         for Pixel { x, y } in &self.drawn_positions {
             print!("{} ", cursor::Goto(*x, *y));
         }
         self.drawn_positions.clear();
-        for (_id, state) in states {
+        for state in states {
             if let Some(px) = self.position_to_pixel(state.position) {
                 self.drawn_positions.push(px);
                 match state.tag {
-                    Tag::It(_) => print!("{}{}@", cursor::Goto(px.x, px.y), color::Red.fg_str()),
-                    Tag::Recent => {
+                    2 => {
+                        print!("{}{}@", cursor::Goto(px.x, px.y), color::Red.fg_str())
+                    }
+                    1 => {
                         print!("{}{}%", cursor::Goto(px.x, px.y), color::Yellow.fg_str());
                     }
-                    Tag::None => print!("{}{}#", cursor::Goto(px.x, px.y), color::Green.fg_str()),
+                    _ => print!("{}{}#", cursor::Goto(px.x, px.y), color::Green.fg_str()),
                 }
             }
         }

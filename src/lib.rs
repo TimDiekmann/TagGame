@@ -1,4 +1,4 @@
-#![allow(clippy::must_use_candidate)]
+#![allow(clippy::must_use_candidate, clippy::module_name_repetitions)]
 
 //! A simple agent-based engine to simulate the game "Tag".
 //!
@@ -121,10 +121,10 @@
 //! simulation.update();
 //! ```
 
-mod agent;
 mod simulation;
-mod world;
 
-pub use self::agent::Agent;
+mod script;
+
 pub use self::simulation::Simulation;
-pub use self::world::World;
+
+pub use self::script::{LuaScriptHost, ScriptHost};

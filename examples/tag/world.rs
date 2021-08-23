@@ -1,7 +1,4 @@
 use serde::{Deserialize, Serialize};
-use tag_game::World;
-
-use crate::agent::{AgentState, Tag, TagAgent};
 
 /// Properties of the board of the game.
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
@@ -22,6 +19,7 @@ impl Default for Board {
 }
 
 /// Global state for the game.
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TagWorld {
     /// The board used in the game
     pub board: Board,
@@ -31,12 +29,10 @@ pub struct TagWorld {
     pub recent_it: Option<usize>,
 }
 
-impl World<TagAgent> for TagWorld {
-    fn update(&mut self, agents: &mut [(TagAgent, AgentState)]) {
-        // Check, if the current "It" has tagged someone in the latest tick
-        if let Tag::It(Some(next)) = agents[self.current_it].1.tag {
-            self.recent_it = Some(self.current_it);
-            self.current_it = next;
-        }
-    }
-}
+// fn update(&mut self, agents: &mut [(TagAgent, AgentState)]) {
+//     // Check, if the current "It" has tagged someone in the latest tick
+//     if let Tag::It(Some(next)) = agents[self.current_it].1.tag {
+//         self.recent_it = Some(self.current_it);
+//         self.current_it = next;
+//     }
+// }
