@@ -2,8 +2,9 @@ use rayon::prelude::*;
 
 use crate::{Agent, World};
 
-/// Adds and removes [`Agent`]s, and updates the them
-/// based on their defined behavior.
+/// Keeps track of all [`Agent`]s, its states and the global state.
+///
+/// It's responsible to update the `Agent`s states based on their defined behavior.
 ///
 /// Please see the [crate documentation][crate] for examples.
 pub struct Simulation<A: Agent> {
@@ -13,9 +14,9 @@ pub struct Simulation<A: Agent> {
 }
 
 impl<A: Agent> Simulation<A> {
-    /// Creates a simulation, where different agents can be created.
+    /// Creates a simulation with the provided [`World`].
     ///
-    /// Please see the [crate documentation][crate] for examples.
+    /// The `World` is passed to the agents, when they get update.
     pub fn new(world: A::World) -> Self {
         Self {
             world,
@@ -24,33 +25,33 @@ impl<A: Agent> Simulation<A> {
         }
     }
 
-    /// Returns a slice over all agents added to the simulation.
-    ///
-    /// Please see the [crate documentation][crate] for examples.
+    /// Creates a simulation with the provided [`World`] and reserves memory for the spcified
+    /// number of agent without the need for reallocating.
+    pub fn with_capacity(world: A::World, num_agent: usize) -> Self {
+        Self {
+            world,
+            agents: Vec::with_capacity(num_agent),
+            state_buffer: Vec::with_capacity(num_agent),
+        }
+    }
+
+    /// Returns a slice over all agents and its state added to the simulation.
     #[inline]
     pub fn agents(&self) -> &[(A, A::State)] {
         &self.agents
     }
 
-    /// Returns a mutable iterator over all agents added to the simulation.
-    ///
-    /// Please see the [crate documentation][crate] for examples.
+    /// Returns a mutable slice over all agents and its state added to the simulation.
     #[inline]
     pub fn agents_mut(&mut self) -> &mut [(A, A::State)] {
         &mut self.agents
     }
 
-    /// Add a new agent to the simulation.
+    /// Add a new agent with an initial to the simulation.
     ///
-    /// After adding the agent to the simulation, [`Agent::on_creation`] is called.
+    /// This will call [`Agent::on_creation()`] when the agent was created.
     ///
     /// Returns a unique identifier for the created agent.
-    ///
-    /// Please see the [crate documentation][crate] for examples.
-    ///
-    /// # Panics
-    ///
-    /// When the simulation runs out of unique identifiers (2^64).
     pub fn add_agent(&mut self, agent: A, mut state: A::State) -> usize {
         let id = self.agents.len();
         agent.on_creation(id, &mut state, &self.world);
@@ -58,12 +59,12 @@ impl<A: Agent> Simulation<A> {
         id
     }
 
-    /// Get a reference to the simulation's world.
+    /// Get a shared reference to the global state.
     pub fn world(&self) -> &A::World {
         &self.world
     }
 
-    /// Get a mutable reference to the simulation's world.
+    /// Get a unique reference to the global state.
     pub fn world_mut(&mut self) -> &mut A::World {
         &mut self.world
     }
@@ -74,7 +75,18 @@ where
     A: Clone,
     A::State: Clone,
 {
-    /// Calls [`Agent::on_update`] for every registered agent.
+    /// Advances the simulation by one tick.
+    ///
+    /// First, on every added Agent, [`Agent::on_update()`] is invoked in arbitrary order.
+    /// This happens in parallel. Afterwards, the global state is updated by calling
+    /// [`World::update()`].
+    ///
+    /// To every [`Agent`] it's current state is passed as unique reference. Also a list
+    /// of all other agents is passed as shared reference. The list is updated once before
+    /// the tick and every agent will receive the same list.
+    ///
+    /// When updating the global state, a mutable slice to all `Agent`s and its states
+    /// are passed to [`World`].
     pub fn update(&mut self) {
         self.state_buffer.clone_from(&self.agents);
         let state_buffer = &self.state_buffer;
