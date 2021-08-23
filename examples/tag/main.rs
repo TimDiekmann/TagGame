@@ -74,15 +74,23 @@ fn main() -> Result<(), std::io::Error> {
             Key::Char('q') | Key::Esc | Key::Ctrl('c' | 'd') => break,
             Key::Char('t') => {
                 let start = Instant::now();
+
+                // We may skip some frames being shown
+                // as terminals tend to be slow
                 for _ in 0..config.step {
+                    // Advance simulation by one tick
                     simulation.update();
                 }
+
                 let calc_time = start.elapsed();
                 let start = Instant::now();
+
+                // Draw players on board
                 viewer.draw_players(simulation.agents());
+
                 let draw_time = start.elapsed();
-                stdout().flush()?;
                 viewer.draw_time(calc_time, draw_time, config.step)?;
+                stdout().flush()?;
             }
             Key::Left | Key::Char('h') => viewer.scroll_left(simulation.agents()),
             Key::Down | Key::Char('j') => viewer.scroll_down(simulation.agents()),
@@ -90,6 +98,8 @@ fn main() -> Result<(), std::io::Error> {
             Key::Right | Key::Char('l') => viewer.scroll_right(simulation.agents()),
             _ => {}
         }
+
+        // Inspect some values
         let current_it_id = simulation.world().current_it;
         let (_, current_it) = &simulation.agents()[current_it_id];
         print!(

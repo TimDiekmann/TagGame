@@ -17,6 +17,7 @@ use crate::{
     world::Board,
 };
 
+/// Simple abstraction over a pixel.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Pixel {
     pub x: u16,
@@ -32,6 +33,7 @@ impl Pixel {
     }
 }
 
+/// Draws the board and the agent on the terminal.
 pub struct Output {
     screen: HideCursor<AlternateScreen<RawTerminal<Stdout>>>,
     board: Board,
@@ -39,11 +41,12 @@ pub struct Output {
     drawn_positions: Vec<Pixel>,
     scroll: (i16, i16),
     last_ups: Vec<u32>,
-    last_fps: Vec<u32>,
+    last_draw_times: Vec<Duration>,
     tick: u8,
 }
 
 impl Output {
+    /// Creates an output to draw agents to the terminal.
     pub fn new(board: Board) -> Result<Self, Error> {
         let mut output = Self {
             screen: HideCursor::from(AlternateScreen::from(stdout().into_raw_mode()?)),
@@ -52,7 +55,7 @@ impl Output {
             drawn_positions: Vec::new(),
             scroll: (1, 1),
             last_ups: repeat(0).take(10).collect(),
-            last_fps: repeat(0).take(10).collect(),
+            last_draw_times: repeat(Duration::default()).take(10).collect(),
             tick: 0,
         };
 
@@ -68,21 +71,25 @@ impl Output {
         print!("{}{}", color::Reset.fg_str(), cursor::Goto(39, 1));
     }
 
+    /// Scroll the board up
     pub fn scroll_up(&mut self, states: &[(TagAgent, AgentState)]) {
         self.scroll.1 = self.scroll.1.saturating_add(1);
         self.after_scrolling(states);
     }
 
+    /// Scroll the board down
     pub fn scroll_down(&mut self, states: &[(TagAgent, AgentState)]) {
         self.scroll.1 = self.scroll.1.saturating_sub(1);
         self.after_scrolling(states);
     }
 
+    /// Scroll the board to the left
     pub fn scroll_left(&mut self, states: &[(TagAgent, AgentState)]) {
         self.scroll.0 = self.scroll.0.saturating_add(1);
         self.after_scrolling(states);
     }
 
+    /// Scroll the board to the right
     pub fn scroll_right(&mut self, states: &[(TagAgent, AgentState)]) {
         self.scroll.0 = self.scroll.0.saturating_sub(1);
         self.after_scrolling(states);
@@ -114,10 +121,12 @@ impl Output {
         }
     }
 
+    /// Clears the terminal
     pub fn clear() {
         print!("{}", clear::All);
     }
 
+    /// Draws the timing for updates and frames
     #[allow(
         clippy::cast_possible_truncation,
         clippy::cast_precision_loss,
@@ -131,23 +140,23 @@ impl Output {
         step: u32,
     ) -> Result<(), Error> {
         let ups = 1_000_000_f64 / (calc_time.as_micros().clamp(1, u128::MAX) as f64 / step as f64);
-        let fps = 1_000_000 / draw_time.as_micros().clamp(1, u128::MAX);
+        // let draw_time = draw_time.as_millis();
 
         self.last_ups[self.tick as usize % 10] = ups as u32;
-        self.last_fps[self.tick as usize % 10] = fps as u32;
+        self.last_draw_times[self.tick as usize % 10] = draw_time;
         self.tick += 1;
 
         let avg_ups = self.last_ups.iter().sum::<u32>() / 10;
-        let avg_fps = self.last_fps.iter().sum::<u32>() / 10;
+        let avg_draw_times = self.last_draw_times.iter().sum::<Duration>() / 10;
         write!(
             self.screen,
-            "{}{}tps: {:4} ups ({:4} on avg), fps: {:4} fps ({:4} on avg) {}",
+            "{}{}{:4} ups ({:4} on avg), frame time: {:4?} ({:4?} on avg) {}",
             color::Reset.fg_str(),
             cursor::Goto(1, self.terminal_size.1),
             ups as u32,
             avg_ups as u32,
-            fps,
-            avg_fps,
+            draw_time,
+            avg_draw_times,
             cursor::Goto(39, 1),
         )
     }

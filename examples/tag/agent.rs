@@ -17,6 +17,7 @@ pub enum Tag {
     None,
 }
 
+/// Simple abstraction over a position for an agent
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Position {
     pub x: f32,
@@ -114,6 +115,7 @@ impl Agent for TagAgent {
                     }
                 }
 
+                // If "It" is close to another agent, tag it
                 if nearest.0 != id && nearest.1 < 3. {
                     next.replace(nearest.0);
                     return;
