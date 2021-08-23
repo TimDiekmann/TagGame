@@ -91,10 +91,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::{
-        collections::HashMap,
-        sync::atomic::{AtomicU64, Ordering},
-    };
+    use std::sync::atomic::{AtomicU64, Ordering};
 
     use crate::{Agent, Simulation, World};
 

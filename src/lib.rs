@@ -11,7 +11,7 @@
 //! struct EmptyAgent;
 //!
 //! impl Agent for EmptyAgent {
-//!     type State = ();
+//!     type State = u32;
 //!     type World = ();
 //! }
 //!
@@ -19,18 +19,12 @@
 //! let mut simulation = Simulation::new(());
 //!
 //! // Add some agents
-//! let agent_id_1 = simulation.add_agent(EmptyAgent, ());
-//! let agent_id_2 = simulation.add_agent(EmptyAgent, ());
+//! let agent_id_1 = simulation.add_agent(EmptyAgent, 2);
+//! let agent_id_2 = simulation.add_agent(EmptyAgent, 3);
 //!
-//! // If desired, an iterator over all agents can be retrieved
-//! let mut agents = simulation.iter();
-//! assert!(agents.find(|(id, _)| *id == agent_id_1).is_some());
-//! // needed for dropck
-//! drop(agents);
-//!
-//! // If an agent is not needed anymore, they can be removed
-//! simulation.remove_agent(agent_id_1);
-//! assert!(simulation.iter().find(|(id, _)| *id == agent_id_1).is_none());
+//! // If desired, a list of all agents and its state can be retrieved
+//! let mut agents = simulation.agents();
+//! assert_eq!(agents[agent_id_1], (EmptyAgent, 2));
 //! ```
 
 mod agent;
