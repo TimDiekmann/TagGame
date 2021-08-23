@@ -49,6 +49,7 @@ impl Default for Config {
 }
 
 impl Config {
+    /// Loads the configuration file or creates it, if it does not exist.
     pub fn load() -> Result<Self, io::Error> {
         let config_file_path = std::env::current_dir()?
             .join("examples")
