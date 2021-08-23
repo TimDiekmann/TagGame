@@ -1,3 +1,0 @@
-(function() {var implementors = {};
-implementors["tag_game"] = [{"text":"impl&lt;A:&nbsp;<a class=\"trait\" href=\"tag_game/trait.Agent.html\" title=\"trait tag_game::Agent\">Agent</a>&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/ops/drop/trait.Drop.html\" title=\"trait core::ops::drop::Drop\">Drop</a> for <a class=\"struct\" href=\"tag_game/struct.Simulation.html\" title=\"struct tag_game::Simulation\">Simulation</a>&lt;A&gt;","synthetic":false,"types":["tag_game::simulation::Simulation"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
