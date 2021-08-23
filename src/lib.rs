@@ -117,6 +117,7 @@
 //! # impl Agent for MyAgent { type State = (); type World = (); }
 //! # let mut simulation = Simulation::new(());
 //! # simulation.add_agent(MyAgent, ());
+//! # #[cfg(not(miri))]
 //! simulation.update();
 //! ```
 
