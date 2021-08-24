@@ -1,9 +1,16 @@
 use serde::{Deserialize, Serialize};
 
-// I want to get this working...
-static IT: u8 = 2;
-static RECENT: u8 = 1;
-static NONE: u8 = 0;
+/// The state, if an agent is tagged.
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Tag {
+    /// The agent is currently "It". If the id is set, "It" has tagged
+    /// a new agent, which will become "It" next tick.
+    It(Option<usize>),
+    /// The agent recently was "It".
+    Recent,
+    /// The agent can be tagged by "It".
+    None,
+}
 
 /// Simple abstraction over a position for an agent
 #[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Debug)]
@@ -33,7 +40,7 @@ pub struct Properties {
 /// The current State an agent.
 #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct AgentState {
-    pub tag: u8,
+    pub tag: Tag,
     pub position: Position,
     pub properties: Properties,
 }

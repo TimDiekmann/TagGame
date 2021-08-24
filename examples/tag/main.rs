@@ -11,7 +11,7 @@ use std::{
     time::Instant,
 };
 
-use agent::{Position, Properties};
+use agent::{Position, Properties, Tag};
 use rand::Rng;
 use termion::{event::Key, input::TermRead};
 
@@ -59,7 +59,7 @@ fn main() -> Result<(), std::io::Error> {
             .add_agent(
                 default_agent_behavior,
                 AgentState {
-                    tag: 0,
+                    tag: Tag::None,
                     position: Position {
                         x: rng.gen_range(0. ..config.board.width as f32),
                         y: rng.gen_range(0. ..config.board.height as f32),

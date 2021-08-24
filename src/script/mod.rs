@@ -74,6 +74,8 @@ impl<S: Serialize, W: Serialize> ScriptHost<S, W> for LuaScriptHost {
         let lua = Lua::new();
 
         lua.globals().set("world", lua.to_value(&world)?)?;
+        lua.globals()
+            .set("NULL", lua.to_value(&Option::<()>::None)?)?;
 
         let world_behaviors = lua.create_table()?;
         lua.globals().set("world_behaviors", world_behaviors)?;

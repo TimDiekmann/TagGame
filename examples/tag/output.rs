@@ -13,7 +13,7 @@ use termion::{
 };
 
 use crate::{
-    agent::{AgentState, Position},
+    agent::{AgentState, Position, Tag},
     world::Board,
 };
 
@@ -165,13 +165,13 @@ impl Output {
             if let Some(px) = self.position_to_pixel(state.position) {
                 self.drawn_positions.push(px);
                 match state.tag {
-                    2 => {
-                        print!("{}{}@", cursor::Goto(px.x, px.y), color::Red.fg_str())
+                    Tag::It(_) => {
+                        print!("{}{}@", cursor::Goto(px.x, px.y), color::Red.fg_str());
                     }
-                    1 => {
+                    Tag::Recent => {
                         print!("{}{}%", cursor::Goto(px.x, px.y), color::Yellow.fg_str());
                     }
-                    _ => print!("{}{}#", cursor::Goto(px.x, px.y), color::Green.fg_str()),
+                    Tag::None => print!("{}{}#", cursor::Goto(px.x, px.y), color::Green.fg_str()),
                 }
             }
         }

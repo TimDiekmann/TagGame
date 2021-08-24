@@ -40,14 +40,15 @@ end
 
 function agent_module.on_update(id, state, world, population)
     if world.current_it == id then
-        state.tag = 2
+        state.tag = {}
+        state.tag["It"] = NULL
     elseif world.recent_id == id then
-        state.tag = 1
+        state.tag = "Recent"
     else
-        state.tag = 0
+        state.tag = "None"
     end
 
-    if state.tag == 2 then
+    if type(state.tag) == "table" and state.tag["It"] ~= nil then
         nearest_d = 2000000000
         nearest_id = id
 
@@ -55,23 +56,25 @@ function agent_module.on_update(id, state, world, population)
             if id == ag_id then goto continue end
             if ag_id == world.recent_id then goto continue end
 
-            d = distance_squared(population[world.current_it].position, state.position)
+            d = distance_squared(state.position, agent.position)
             if d < nearest_d then
                 nearest_d = d
                 nearest_id = ag_id
+                nearest_pos = agent.position
             end
             ::continue::
         end
 
-        if nearest_id ~= id and nearest_d < 3 then
-            -- population[world.recent_it].tag = 0
-            -- population[world.current_it].tag = 1
-            -- population[nearest_id].tag = 2
-            world.recent_it = id
+        if nearest_id == id then
+            return
+        end
+
+        if nearest_d < 3 then
+            world.recent_id = id
             world.current_it = nearest_id
         end
 
-        if it_x < x then
+        if nearest_pos.x > state.position.x then
             dx = 1
         else
             dx = -1
@@ -80,7 +83,7 @@ function agent_module.on_update(id, state, world, population)
             dx = dx * -1
         end
 
-        if it_y < y then
+        if nearest_pos.y > state.position.y then
             dy = state.properties.tagged_deciding
         else
             dy = -state.properties.tagged_deciding
@@ -92,7 +95,7 @@ function agent_module.on_update(id, state, world, population)
         speed = state.properties.tagged_speed_multiplied
         run(state, world.board, dx*speed, dy*speed)
 
-    elseif state.tag == 1 then
+    elseif state.tag == "Recent" then
 
         if math.random() > 0.5 then
             dx = 1
@@ -106,7 +109,7 @@ function agent_module.on_update(id, state, world, population)
         end
         run(state, world.board, dx*speed, dy*speed)
 
-    elseif state.tag == 0 then
+    elseif state.tag == "None" and world.current_it ~= nil then
         pos_it = population[world.current_it].position
         it_x = pos_it.x
         it_y = pos_it.y
