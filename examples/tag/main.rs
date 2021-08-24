@@ -88,11 +88,8 @@ fn main() -> Result<(), std::io::Error> {
     // create the viewer to spectate the game
     let mut viewer = Output::new(config.board)?;
     simulation.update().expect("Unable to upgrade");
-    viewer.draw_players(&simulation.agents().expect("Could not get agents"));
-    // let mut world = simulation.world().expect("Could not get world");
-    // let mut agents = simulation.agents().expect("Could not get agents");
-
-    let mut agents = simulation.agents().expect("Could not get agents");
+    let agents = simulation.agents().expect("Could not get agents");
+    viewer.draw_players(&agents);
 
     for c in stdin().keys() {
         match c? {
@@ -121,8 +118,7 @@ fn main() -> Result<(), std::io::Error> {
                 let start = Instant::now();
 
                 // Draw players on board
-                agents = simulation.agents().expect("Could not get agents");
-                viewer.draw_players(&agents);
+                viewer.draw_players(&simulation.agents().expect("Could not get agents"));
 
                 let draw_time = start.elapsed();
                 viewer.draw_time(calc_time, draw_time, config.step);

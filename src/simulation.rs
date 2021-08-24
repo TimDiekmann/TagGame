@@ -90,6 +90,6 @@ impl<S: Serialize, W: Serialize, SH: ScriptHost<S, W>> Simulation<S, W, SH> {
     /// When updating the global state, a mutable slice to all `Agent`s and its states
     /// are passed to [`World`].
     pub fn update(&mut self) -> Result<(), SH::Error> {
-        SH::invoke(&mut self.script_context)
+        SH::update(&mut self.script_context)
     }
 }
