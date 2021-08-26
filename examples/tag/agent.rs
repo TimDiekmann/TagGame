@@ -70,10 +70,10 @@ impl Agent for TagAgent {
     fn on_update(
         &self,
         id: usize,
-        state: &mut Self::State,
+        state: &Self::State,
         world: &Self::World,
         population: &[(Self, Self::State)],
-    ) {
+    ) -> Option<Self::State> {
         fn run(state: &mut AgentState, board: Board, dx: f32, dy: f32) {
             state.position.x = (state.position.x + dx).clamp(0., board.width as f32 - 1.);
             state.position.y = (state.position.y + dy).clamp(0., board.height as f32 - 1.);
@@ -84,6 +84,8 @@ impl Agent for TagAgent {
         // chosen by fair dice roll.
         // guaranteed to be random.
         let mut random_bool = |probability| -> bool { probability > rng.gen_range(0.0..1.0) };
+
+        let mut state = state.clone();
 
         if world.current_it == id {
             state.tag = Tag::It(None);
@@ -118,7 +120,7 @@ impl Agent for TagAgent {
                 // If "It" is close to another agent, tag it
                 if nearest.0 != id && nearest.1 < 3. {
                     next.replace(nearest.0);
-                    return;
+                    return Some(state);
                 }
 
                 let Position { x: ag_x, y: ag_y } = population[nearest.0].1.position;
@@ -137,13 +139,13 @@ impl Agent for TagAgent {
                     -1.
                 } * state.properties.tagged_speed_multiplied;
 
-                run(state, world.board, dx, dy);
+                run(&mut state, world.board, dx, dy);
             }
             // Run around randomly
             Tag::Recent => {
                 let dx = if random_bool(0.5) { 1. } else { -1. };
                 let dy = if random_bool(0.5) { 1. } else { -1. };
-                run(state, world.board, dx, dy);
+                run(&mut state, world.board, dx, dy);
             }
             // Flee from "It"
             Tag::None => {
@@ -167,8 +169,9 @@ impl Agent for TagAgent {
                     dx *= -1.;
                     dy *= -1.;
                 }
-                run(state, world.board, dx, dy);
+                run(&mut state, world.board, dx, dy);
             }
-        }
+        };
+        Some(state)
     }
 }

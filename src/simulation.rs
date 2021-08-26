@@ -1,6 +1,6 @@
 use rayon::prelude::*;
 
-use crate::{Agent, World};
+use crate::{agent, Agent, World};
 
 /// Keeps track of all [`Agent`]s, its states and the global state.
 ///
@@ -88,15 +88,19 @@ where
     /// When updating the global state, a mutable slice to all `Agent`s and its states
     /// are passed to [`World`].
     pub fn update(&mut self) {
-        self.state_buffer.clone_from(&self.agents);
-        let state_buffer = &self.state_buffer;
-        let world = &self.world;
-        self.agents
-            .par_iter_mut()
+        let new_states: Vec<(usize, A::State)> = self
+            .agents
+            .par_iter()
             .enumerate()
-            .for_each(|(id, (agent, state))| {
-                agent.on_update(id, state, world, state_buffer);
-            });
+            .filter_map(|(id, (agent, state))| {
+                agent
+                    .on_update(id, state, &self.world, &self.agents)
+                    .map(|x| (id, x))
+            })
+            .collect();
+        for (i, updated_state) in new_states {
+            self.agents[i].1 = updated_state;
+        }
         self.world.update(&mut self.agents);
     }
 }

@@ -32,9 +32,8 @@ pub trait Agent: Sized + Send + Sync {
     fn on_update(
         &self,
         id: usize,
-        state: &mut Self::State,
+        state: &Self::State,
         world: &Self::World,
         population: &[(Self, Self::State)],
-    ) {
-    }
+    ) -> Option<Self::State>;
 }
